@@ -1,0 +1,8 @@
+# IGNORE ALL
+*
+
+# NOT TO IGNORE
+!/.gitignore
+!Analysis_2.py
+!README.md
+
