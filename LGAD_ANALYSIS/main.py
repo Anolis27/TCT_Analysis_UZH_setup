@@ -1,4 +1,10 @@
 # main SCRIPT
+import config as cfg
+import data_manager as dm
+import amplitude as amp
+import charge_collection as cc
+import interpad as ipd
+
 import time
 
 def main():

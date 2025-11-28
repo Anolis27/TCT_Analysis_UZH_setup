@@ -5,12 +5,12 @@ import numpy
 import pickle
 import math
 import statistics
-from Config import AMPLITUDE_THRESHOLD, TIME_DIFF_MIN, TIME_DIFF_MAX, PEAK_TIME_MIN, PEAK_TIME_MAX
+from config import AMPLITUDE_THRESHOLD, TIME_DIFF_MIN, TIME_DIFF_MAX, PEAK_TIME_MIN, PEAK_TIME_MAX
 
 
 def query_dataset(datafile):
     #print(f"Querying dataset...")
-    global n_position; global n_triggers; global n_channels
+    #global n_position; global n_triggers; global n_channels
     connection = sqlite3.connect(datafile)
     query = "SELECT n_position FROM dataframe_table WHERE n_trigger = 0 and n_pulse = 1 and n_channel = 1"
     filtered_data = pandas.read_sql_query(query, connection)
@@ -23,7 +23,7 @@ def query_dataset(datafile):
     n_channels = len(filtered_data)
     connection.close()
     #print(f"{n_position} positions, {n_triggers} triggers and {n_channels} channels found")
-    return None
+    return n_position, n_triggers, n_channels
 
 def get_positions(positions):
     # get the (x,y) positions from the saved data

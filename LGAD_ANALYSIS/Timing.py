@@ -1,4 +1,15 @@
 # SCRIPT FOR TIMING ANALYSIS
+import data_manager as dm  
+import sqlite3
+import pandas
+import numpy
+import math
+import statistics
+from scipy.optimize import curve_fit
+import matplotlib.pyplot as plt
+
+def gaussian(x, mu, sig):
+    return 1./(numpy.sqrt(2.*numpy.pi)*sig)*numpy.exp(-numpy.power((x - mu)/sig, 2.)/2)
 
 def plot_time_difference_t50(datafile):
     query_dataset(datafile)

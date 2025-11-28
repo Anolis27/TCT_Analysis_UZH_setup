@@ -1,8 +1,10 @@
 # SCRIPT FOR CHARGE COLLECTION ANALYSIS
-import Data_manager as dm
+import data_manager as dm
 import sqlite3
 import pandas
 
+def gaussian(x, mu, sig):
+    return 1./(numpy.sqrt(2.*numpy.pi)*sig)*numpy.exp(-numpy.power((x - mu)/sig, 2.)/2)
 
 def plot_collected_charge(datafile):
     dm.query_dataset(datafile)

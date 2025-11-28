@@ -1,12 +1,30 @@
-# SCRIPT FOR AMPLITUDE ANALYSIS
+# Amplitude.py
+from data_manager import *
+import sqlite3
+import pandas
+import math
+import scipy.stats as stats
+from scipy.optimize import curve_fit
+import numpy
+import seaborn as sns
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
+from matplotlib import figure
+from matplotlib.backends.backend_pdf import PdfPages
+import statistics
+
+
+def gaussian(x, mu, sig):
+    return 1./(numpy.sqrt(2.*numpy.pi)*sig)*numpy.exp(-numpy.power((x - mu)/sig, 2.)/2)
 
 def plot_amplitude(datafile, positions):
-    query_dataset(datafile)
+    n_position, n_triggers, n_channels = dm.query_dataset(datafile)
     amplitudes = {}
-    (chan1, chan2) = determine_active_channels(datafile)
+    (chan1, chan2) = dm.determine_active_channels(datafile)
     connection = sqlite3.connect(datafile)
     for channel in (chan1, chan2):
-        pad_positions = get_pad_positions(datafile, positions, channel)
+        pad_positions = dm.get_pad_positions(datafile, positions, channel)
         data = pandas.read_sql(f"SELECT n_position,n_trigger,n_pulse, `t_90 (s)`, `Time over 90% (s)`,`Amplitude (V)`, `t_50 (s)` FROM dataframe_table WHERE n_channel=={channel}", connection)
         data.set_index(['n_position','n_trigger','n_pulse'], inplace=True)
         amplitude_data = data['Amplitude (V)']
@@ -45,7 +63,7 @@ def plot_amplitude(datafile, positions):
     return None
 
 def plot_noise(datafile, fig, ax1, ax2):
-    query_dataset(datafile)
+    dm.query_dataset(datafile)
     noise = {}
     connection = sqlite3.connect(datafile)
     for channel in range(1, n_channels + 1):

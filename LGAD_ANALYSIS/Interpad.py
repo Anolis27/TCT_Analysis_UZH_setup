@@ -1,4 +1,18 @@
 # SCRIP FOR ANALYSIS IN INTERPAD REGION
+import data_manager as dm
+import sqlite3
+import pandas
+import numpy
+import matplotlib.pyplot as plt
+import os
+import math
+
+def sigmoid(x, x0, b, L, k):
+    y = L / (1 + numpy.exp(-k*(x-x0))) + b
+    return (y)
+
+def gaussian(x, mu, sig):
+    return 1./(numpy.sqrt(2.*numpy.pi)*sig)*numpy.exp(-numpy.power((x - mu)/sig, 2.)/2)
 
 def get_interpad_distance(datafile, positions, channel1, sensor_strip_positions1,
                           channel2, sensor_strip_positions2, pdf):
