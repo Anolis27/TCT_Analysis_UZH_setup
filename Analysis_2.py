@@ -105,22 +105,23 @@ def get_channel_amplitude(datafile, channel, pulse_no = 1):
     t_90_data = data["t_90 (s)"]
     time_over_90_data = data['Time over 90% (s)']
     amplitudes = []
-    result = []
-    for j in range(n_triggers):
-        amplitude = amplitude_data[i,j,1]
-        if math.isnan(amplitude) or amplitude > AMPLITUDE_THRESHOLD:
-            continue
-        time_diff = (t_50_data[i,j,2] - t_50_data[i,j,1]) * 1e9
-        if time_diff < TIME_DIFF_MIN or time_diff > TIME_DIFF_MAX:
-            continue
-        peak_time = (t_90_data[i,j,1] + 0.5 * time_over_90_data[i,j,1]) * 1e9
-        if peak_time < PEAK_TIME_MIN or peak_time > PEAK_TIME_MAX:
-            continue
-        result.append(amplitude)
-    if result == []:
-        amplitudes.append(0)
-    else:
-        amplitudes.append(statistics.mean(result))
+    for i in range(n_position):
+        result = []
+        for j in range(n_triggers):
+            amplitude = amplitude_data[i,j,1]
+            if math.isnan(amplitude) or amplitude > AMPLITUDE_THRESHOLD:
+                continue
+            time_diff = (t_50_data[i,j,2] - t_50_data[i,j,1]) * 1e9
+            if time_diff < TIME_DIFF_MIN or time_diff > TIME_DIFF_MAX:
+                continue
+            peak_time = (t_90_data[i,j,1] + 0.5 * time_over_90_data[i,j,1]) * 1e9
+            if peak_time < PEAK_TIME_MIN or peak_time > PEAK_TIME_MAX:
+                continue
+            result.append(amplitude)
+        if result == []:
+            amplitudes.append(0)
+        else:
+            amplitudes.append(statistics.mean(result))
     return amplitudes
 
 # Hardcoded to return channels 1 and 2 for now
@@ -375,7 +376,6 @@ def plot_amplitude_everything(directory_in_str = "Data/"):
             directory2 = os.fsencode(directory2_in_str)
 
             final_plot[filename] = {}
-
             
             for folder in sorted(
                 (f.decode() if isinstance(f, bytes) else f
@@ -432,7 +432,6 @@ def plot_amplitude_everything(directory_in_str = "Data/"):
                 fig = plt.gcf()
                 pdf.savefig(fig, dpi = 100)
                 
-
         plt.clf()
         color_counter = 0
         linestyle_counter = 0
@@ -516,7 +515,6 @@ def plot_collected_charge_everything(directory_in_str = "Data/"):
             directory2 = os.fsencode(directory2_in_str)
 
             final_plot[filename] = {}
-
             
             for folder in sorted(
                 (f.decode() if isinstance(f, bytes) else f
@@ -575,7 +573,6 @@ def plot_collected_charge_everything(directory_in_str = "Data/"):
                 fig = plt.gcf()
                 pdf.savefig(fig, dpi = 100)
                 
-
         plt.clf()
         color_counter = 0
         linestyle_counter = 0
@@ -660,7 +657,6 @@ def plot_time_resolution_everything(directory_in_str = "Data/"):
 
             final_plot[filename] = {}
 
-            
             for folder in sorted(
                 (f.decode() if isinstance(f, bytes) else f
                  for f in os.listdir(directory2)
@@ -1617,6 +1613,7 @@ start_time = time.time()
 #plot_sensor_strip_positions(test_datafile, test_positions)
 # query_dataset(test_datafile)
 # print(get_positions(test_positions))
+print(get_channel_amplitude(test_datafile, 1))
 
 
 time_taken = round(time.time() - start_time)

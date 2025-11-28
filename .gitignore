@@ -10,4 +10,5 @@
 !Timing.py
 !Amplitude.py
 !Charge_collection.py
-
+!LGAD_ANALYSIS/
+!LGAD_ANALYSIS/**
