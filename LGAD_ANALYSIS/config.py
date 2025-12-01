@@ -21,7 +21,9 @@ class Colors:
 
 class Filters:
     AMPLITUDE_THRESHOLD = -0.07  # V
-    TIME_DIFF_MIN = 98
-    TIME_DIFF_MAX = 99.5
-    PEAK_TIME_MIN = 4.5
-    PEAK_TIME_MAX = 6.5
+    TIME_DIFF_MIN = 98      # ns
+    TIME_DIFF_MAX = 99.5     # ns
+    PEAK_TIME_MIN = 4.5     # ns
+    PEAK_TIME_MAX = 6.5     # ns
+    INTERPAD_REGION_MIN = -75  # um
+    INTERPAD_REGION_MAX = 75    # um

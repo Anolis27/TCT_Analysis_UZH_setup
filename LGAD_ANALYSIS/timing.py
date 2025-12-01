@@ -1,5 +1,6 @@
 # SCRIPT FOR TIMING ANALYSIS
-import data_manager as dm  
+from config import Paths, Colors, Filters
+from data_manager import *
 import sqlite3
 import pandas
 import numpy
@@ -61,13 +62,13 @@ def plot_time_resolution_of_one_pad(datafile, channel, pad_positions):
             continue
         for j in range(n_triggers):
             amplitude = amplitude_data[i,j,1]
-            if math.isnan(amplitude) or amplitude > AMPLITUDE_THRESHOLD:
+            if math.isnan(amplitude) or amplitude > Filters.AMPLITUDE_THRESHOLD:
                 continue
             time_diff = (t_50_data[i,j,2] - t_50_data[i,j,1]) * 1e9
-            if time_diff < TIME_DIFF_MIN or time_diff > TIME_DIFF_MAX:
+            if time_diff < Filters.TIME_DIFF_MIN or time_diff > Filters.TIME_DIFF_MAX:
                 continue
             peak_time = (t_90_data[i,j,1] + 0.5 * time_over_90_data[i,j,1]) * 1e9
-            if peak_time < PEAK_TIME_MIN or peak_time > PEAK_TIME_MAX:
+            if peak_time < Filters.PEAK_TIME_MIN or peak_time > Filters.PEAK_TIME_MAX:
                 continue
             if math.isnan(time_diff):
                 continue
@@ -205,15 +206,15 @@ def plot_time_difference_histogram(datafile, positions, y_position, pdf):
         for j in range(n_triggers):
             for channel in (chan1, chan2):
                 amplitude = amplitude_data[i,j,1,channel]
-                if math.isnan(amplitude) or amplitude > AMPLITUDE_THRESHOLD:
+                if math.isnan(amplitude) or amplitude > Filters.AMPLITUDE_THRESHOLD:
                     continue
                 time_diff = (t_50_data[i,j,2, channel] - t_50_data[i,j,1, channel]) * 1e9
-                if time_diff < TIME_DIFF_MIN or time_diff > TIME_DIFF_MAX:
+                if time_diff < Filters.TIME_DIFF_MIN or time_diff > Filters.TIME_DIFF_MAX:
                     continue
                 peak_time = (t_90_data[i,j,1, channel] + 0.5 * time_over_90_data[i,j,1, channel]) * 1e9
-                if peak_time < PEAK_TIME_MIN or peak_time > PEAK_TIME_MAX:
+                if peak_time < Filters.PEAK_TIME_MIN or peak_time > Filters.PEAK_TIME_MAX:
                     continue
-                if y[i] >= INTERPAD_REGION_MIN and y[i] <= INTERPAD_REGION_MAX: # only pad region HARDCODED
+                if y[i] >= Filters.INTERPAD_REGION_MIN and y[i] <= Filters.INTERPAD_REGION_MAX: # only pad region HARDCODED
                     continue
                 time_differences.append(time_diff)
     mu, std = statistics.mean(time_differences), statistics.stdev(time_differences)

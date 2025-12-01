@@ -1,12 +1,21 @@
-# MEASURED DATA PROCESSING
+# data_manager.py
+from config import Paths, Colors, Filters
+from scipy import stats
+from scipy.optimize import curve_fit
+import statistics
 import sqlite3
 import pandas
 import numpy
 import pickle
 import math
 import statistics
-from config import AMPLITUDE_THRESHOLD, TIME_DIFF_MIN, TIME_DIFF_MAX, PEAK_TIME_MIN, PEAK_TIME_MAX
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
+import matplotlib.gridspec as gridspec
+from matplotlib import figure
 
+def gaussian(x, mu, sig):
+    return 1./(numpy.sqrt(2.*numpy.pi)*sig)*numpy.exp(-numpy.power((x - mu)/sig, 2.)/2)
 
 def query_dataset(datafile):
     #print(f"Querying dataset...")
@@ -28,6 +37,7 @@ def query_dataset(datafile):
 def get_positions(positions):
     # get the (x,y) positions from the saved data
     # print(f"Getting position data...")
+    n_position, n_triggers, n_channels = query_dataset(datafile)
     positions_data = pandas.read_pickle(positions)
     positions_data.reset_index(['n_x','n_y'], drop=False, inplace=True)
     for _ in {'x','y'}: # remove offset so (0,0) is the center
@@ -56,7 +66,7 @@ def get_bias_voltage(datafile):
     return (voltage, uncertainty)
 
 def get_channel_amplitude(datafile, channel, pulse_no = 1):
-    query_dataset(datafile)
+    n_position, n_triggers, n_channels = query_dataset(datafile)
     connection = sqlite3.connect(datafile)
     data = pandas.read_sql(f"SELECT n_position,n_trigger,n_pulse, `t_90 (s)`, `Time over 90% (s)`,`Amplitude (V)`, `t_50 (s)` FROM dataframe_table WHERE n_channel=={channel}", connection)
     data.set_index(['n_position','n_trigger','n_pulse'], inplace=True)
@@ -69,13 +79,13 @@ def get_channel_amplitude(datafile, channel, pulse_no = 1):
         result = []
         for j in range(n_triggers):
             amplitude = amplitude_data[i,j,1]
-            if math.isnan(amplitude) or amplitude > AMPLITUDE_THRESHOLD:
+            if math.isnan(amplitude) or amplitude > Filters.AMPLITUDE_THRESHOLD:
                 continue
             time_diff = (t_50_data[i,j,2] - t_50_data[i,j,1]) * 1e9
-            if time_diff < TIME_DIFF_MIN or time_diff > TIME_DIFF_MAX:
+            if time_diff < Filters.TIME_DIFF_MIN or time_diff > Filters.TIME_DIFF_MAX:
                 continue
             peak_time = (t_90_data[i,j,1] + 0.5 * time_over_90_data[i,j,1]) * 1e9
-            if peak_time < PEAK_TIME_MIN or peak_time > PEAK_TIME_MAX:
+            if peak_time < Filters.PEAK_TIME_MIN or peak_time > Filters.PEAK_TIME_MAX:
                 continue
             result.append(amplitude)
         if result == []:
@@ -86,7 +96,7 @@ def get_channel_amplitude(datafile, channel, pulse_no = 1):
 
 # Hardcoded to return channels 1 and 2 for now
 def determine_active_channels(datafile):
-##    query_dataset(datafile)
+##    n_position, n_triggers, n_channels = query_dataset(datafile)
 ##    result = {}; list_to_sort = []
 ##    for channel in range(1, n_channels + 1):
 ##        amplitudes = get_channel_amplitude(datafile, channel, pulse_no = 1, method = "median")
@@ -99,7 +109,7 @@ def determine_active_channels(datafile):
 
 def get_pad_positions(datafile, positions, channel): 
     # retrurns list of position indices that correspond to signal
-    query_dataset(datafile)
+    n_position, n_triggers, n_channels = query_dataset(datafile)
     (x,y) = get_positions(positions)
     connection = sqlite3.connect(datafile)
     data = pandas.read_sql(f"SELECT n_position,n_trigger,n_pulse, `t_90 (s)`, `Time over 90% (s)`,`Amplitude (V)`, `t_50 (s)` FROM dataframe_table WHERE n_channel=={channel}", connection)
@@ -114,13 +124,13 @@ def get_pad_positions(datafile, positions, channel):
         result = []
         for j in range(n_triggers):
             amplitude = amplitude_data[i,j,1]
-            if math.isnan(amplitude) or amplitude > AMPLITUDE_THRESHOLD:
+            if math.isnan(amplitude) or amplitude > Filters.AMPLITUDE_THRESHOLD:
                 continue
             time_diff = (t_50_data[i,j,2] - t_50_data[i,j,1]) * 1e9
-            if time_diff < TIME_DIFF_MIN or time_diff > TIME_DIFF_MAX:
+            if time_diff < Filters.TIME_DIFF_MIN or time_diff > Filters.TIME_DIFF_MAX:
                 continue
             peak_time = (t_90_data[i,j,1] + 0.5 * time_over_90_data[i,j,1]) * 1e9
-            if peak_time < PEAK_TIME_MIN or peak_time > PEAK_TIME_MAX:
+            if peak_time < Filters.PEAK_TIME_MIN or peak_time > Filters.PEAK_TIME_MAX:
                 continue
             result.append(amplitude)
         if result == []:
@@ -143,7 +153,7 @@ def get_pad_positions(datafile, positions, channel):
     return pad_position
 
 def plot_pad_positions(datafile, positions):
-    query_dataset(datafile)
+    n_position, n_triggers, n_channels = query_dataset(datafile)
     x, y = get_positions(positions)  # lists of positions in µm
     (active_channel_1, active_channel_2) = determine_active_channels(datafile)
     pad_positions_1 = get_pad_positions(datafile, positions, active_channel_1)
@@ -175,7 +185,7 @@ def plot_pad_positions(datafile, positions):
     return None
 
 def get_sensor_strip_positions(datafile, positions, channel):
-    query_dataset(datafile)
+    n_position, n_triggers, n_channels = query_dataset(datafile)
     (x,y) = get_positions(positions)
     connection = sqlite3.connect(datafile)
     data = pandas.read_sql(f"SELECT n_position,n_trigger,n_pulse, `t_90 (s)`, `Time over 90% (s)`,`Amplitude (V)`, `t_50 (s)` FROM dataframe_table WHERE n_channel=={channel}", connection)
@@ -192,10 +202,10 @@ def get_sensor_strip_positions(datafile, positions, channel):
             if math.isnan(amplitude) or amplitude > 0: # HARDCODED TRESHOLD??
                 continue
             time_diff = (t_50_data[i,j,2] - t_50_data[i,j,1]) * 1e9
-            if time_diff < TIME_DIFF_MIN or time_diff > TIME_DIFF_MAX:
+            if time_diff < Filters.TIME_DIFF_MIN or time_diff > Filters.TIME_DIFF_MAX:
                 continue
             peak_time = (t_90_data[i,j,1] + 0.5 * time_over_90_data[i,j,1]) * 1e9
-            if peak_time < PEAK_TIME_MIN or peak_time > PEAK_TIME_MAX:
+            if peak_time < Filters.PEAK_TIME_MIN or peak_time > Filters.PEAK_TIME_MAX:
                 continue
             result.append(amplitude)
         if result == []:
@@ -257,7 +267,7 @@ def get_sensor_strip_positions(datafile, positions, channel):
 
 def plot_sensor_strip_positions(datafile, positions):
     # Load and prepare data
-    query_dataset(datafile)
+    n_position, n_triggers, n_channels = query_dataset(datafile)
     x, y = get_positions(positions)
     active_ch1, active_ch2 = determine_active_channels(datafile)
 
@@ -315,7 +325,7 @@ def plot_sensor_strip_positions(datafile, positions):
     return None
 
 def project_onto_y_two_channels(datafile, positions, channel1, channel2, sensor_strip_positions1, sensor_strip_positions2, pdf):
-    query_dataset(datafile)
+    n_position, n_triggers, n_channels = query_dataset(datafile)
     (x,y) = get_positions(positions)
     amplitudes = {} # {y position: [list of amplitudes]}
     counter = {}
@@ -342,17 +352,17 @@ def project_onto_y_two_channels(datafile, positions, channel1, channel2, sensor_
             time_diff2 = (t_50_data[i,j,2,channel2] - t_50_data[i,j,1,channel2]) * 1e9
             peak_time2 = (t_90_data[i,j,1,channel2] + 0.5 * time_over_90_data[i,j,1,channel2]) * 1e9
             # if any of them fail cut, set to 0
-            if math.isnan(amplitude1) or amplitude1 > AMPLITUDE_THRESHOLD:
+            if math.isnan(amplitude1) or amplitude1 > Filters.AMPLITUDE_THRESHOLD:
                 amplitude1 = 0
-            if time_diff1 < TIME_DIFF_MIN or time_diff1 > TIME_DIFF_MAX:
+            if time_diff1 < Filters.TIME_DIFF_MIN or time_diff1 > Filters.TIME_DIFF_MAX:
                 amplitude1 = 0
-            if peak_time1 < PEAK_TIME_MIN or peak_time1 > PEAK_TIME_MAX:
+            if peak_time1 < Filters.PEAK_TIME_MIN or peak_time1 > Filters.PEAK_TIME_MAX:
                 amplitude1 = 0
-            if math.isnan(amplitude2) or amplitude2 > AMPLITUDE_THRESHOLD: # FOR SOME REASON WAS 0
+            if math.isnan(amplitude2) or amplitude2 > Filters.AMPLITUDE_THRESHOLD: # FOR SOME REASON WAS 0
                 amplitude2 = 0
-            if time_diff2 < TIME_DIFF_MIN or time_diff2 > TIME_DIFF_MAX:
+            if time_diff2 < Filters.TIME_DIFF_MIN or time_diff2 > Filters.TIME_DIFF_MAX:
                 amplitude2 = 0
-            if peak_time2 < PEAK_TIME_MIN or peak_time2 > PEAK_TIME_MAX:
+            if peak_time2 < Filters.PEAK_TIME_MIN or peak_time2 > Filters.PEAK_TIME_MAX:
                 amplitude2 = 0
             # if both fails cut, go next
             if amplitude1 + amplitude2 == 0:
@@ -389,7 +399,7 @@ def project_onto_y_two_channels(datafile, positions, channel1, channel2, sensor_
     return result
 
 def project_onto_y_one_channel(datafile, positions, channel, sensor_strip_positions):
-    query_dataset(datafile)
+    n_position, n_triggers, n_channels = query_dataset(datafile)
     (x,y) = get_positions(positions)
     amplitudes = {} # {y position: [list of amplitudes]}
     connection = sqlite3.connect(datafile)
@@ -409,10 +419,10 @@ def project_onto_y_one_channel(datafile, positions, channel, sensor_strip_positi
             if math.isnan(amplitude) or amplitude > 0.02: 
                 continue
             time_diff = (t_50_data[i,j,2] - t_50_data[i,j,1]) * 1e9
-            if time_diff < TIME_DIFF_MIN or time_diff > TIME_DIFF_MAX:
+            if time_diff < Filters.TIME_DIFF_MIN or time_diff > Filters.TIME_DIFF_MAX:
                 continue
             peak_time = (t_90_data[i,j,1] + 0.5 * time_over_90_data[i,j,1]) * 1e9
-            if peak_time < PEAK_TIME_MIN or peak_time > PEAK_TIME_MAX:
+            if peak_time < Filters.PEAK_TIME_MIN or peak_time > Filters.PEAK_TIME_MAX:
                 continue
 
             if y[i] not in amplitudes:

@@ -1,5 +1,7 @@
 # Amplitude.py
+from config import Paths, Colors, Filters
 from data_manager import *
+import os
 import sqlite3
 import pandas
 import math
@@ -19,12 +21,12 @@ def gaussian(x, mu, sig):
     return 1./(numpy.sqrt(2.*numpy.pi)*sig)*numpy.exp(-numpy.power((x - mu)/sig, 2.)/2)
 
 def plot_amplitude(datafile, positions):
-    n_position, n_triggers, n_channels = dm.query_dataset(datafile)
+    n_position, n_triggers, n_channels = query_dataset(datafile)
     amplitudes = {}
-    (chan1, chan2) = dm.determine_active_channels(datafile)
+    (chan1, chan2) = determine_active_channels(datafile)
     connection = sqlite3.connect(datafile)
     for channel in (chan1, chan2):
-        pad_positions = dm.get_pad_positions(datafile, positions, channel)
+        pad_positions = get_pad_positions(datafile, positions, channel)
         data = pandas.read_sql(f"SELECT n_position,n_trigger,n_pulse, `t_90 (s)`, `Time over 90% (s)`,`Amplitude (V)`, `t_50 (s)` FROM dataframe_table WHERE n_channel=={channel}", connection)
         data.set_index(['n_position','n_trigger','n_pulse'], inplace=True)
         amplitude_data = data['Amplitude (V)']
@@ -38,10 +40,10 @@ def plot_amplitude(datafile, positions):
                 if math.isnan(amplitude) or amplitude > 0: # HARDCODED AMPLITUDE ??
                     continue
                 time_diff = (t_50_data[i,j,2] - t_50_data[i,j,1]) * 1e9
-                if time_diff < TIME_DIFF_MIN or time_diff > TIME_DIFF_MAX:
+                if time_diff < Filters.TIME_DIFF_MIN or time_diff > Filters.TIME_DIFF_MAX:
                     continue
                 peak_time = (t_90_data[i,j,1] + 0.5 * time_over_90_data[i,j,1]) * 1e9
-                if peak_time < PEAK_TIME_MIN or peak_time > PEAK_TIME_MAX:
+                if peak_time < Filters.PEAK_TIME_MIN or peak_time > Filters.PEAK_TIME_MAX:
                     continue
                 amplitudes[channel].append(amplitude)
     fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(10,5))
@@ -63,7 +65,7 @@ def plot_amplitude(datafile, positions):
     return None
 
 def plot_noise(datafile, fig, ax1, ax2):
-    dm.query_dataset(datafile)
+    n_position, n_triggers, n_channels = query_dataset(datafile)
     noise = {}
     connection = sqlite3.connect(datafile)
     for channel in range(1, n_channels + 1):
@@ -77,7 +79,7 @@ def plot_noise(datafile, fig, ax1, ax2):
     for channel in (1,2):
         bin_min = numpy.nanmedian(noise[channel]) - 0/2; bin_max = numpy.nanmedian(noise[channel]) + 0
         custom_bins = numpy.linspace(bin_min, bin_max, 50 ,endpoint=True)
-        ax1.hist(noise[channel], bins=custom_bins, stacked=False ,histtype='step', edgecolor=CB_color_cycle[channel], lw=1, label=f"Channel {channel}", weights= (1 / len(noise[channel])) * numpy.ones(len(noise[channel])))
+        ax1.hist(noise[channel], bins=custom_bins, stacked=False ,histtype='step', edgecolor=Colors.CB_CYCLE[channel], lw=1, label=f"Channel {channel}", weights= (1 / len(noise[channel])) * numpy.ones(len(noise[channel])))
         
         ax1.set_xlabel(r"Noise (V)")
         ax1.set_ylabel(f"Frequency")
@@ -86,7 +88,7 @@ def plot_noise(datafile, fig, ax1, ax2):
     for channel in (3,4):
         bin_min = 0; bin_max = 0
         custom_bins = numpy.linspace(bin_min, bin_max, 100 ,endpoint=True)
-        ax2.hist(noise[channel], bins=custom_bins, stacked=False ,histtype='step', edgecolor=CB_color_cycle[channel], lw=1, label=f"Channel {channel}", weights= (1 / len(noise[channel])) * numpy.ones(len(noise[channel])))
+        ax2.hist(noise[channel], bins=custom_bins, stacked=False ,histtype='step', edgecolor=Colors.CB_CYCLE[channel], lw=1, label=f"Channel {channel}", weights= (1 / len(noise[channel])) * numpy.ones(len(noise[channel])))
         ax2.set_xlabel(r"Noise (V)")
         ax2.set_ylabel(f"Frequency")
         ax2.legend(loc = "best")
@@ -95,7 +97,7 @@ def plot_noise(datafile, fig, ax1, ax2):
     return None
 
 def plot_amplitude_against_t_peak(datafile, time_variable = "t_90 (s)"):
-    query_dataset(datafile)
+    n_position, n_triggers, n_channels = query_dataset(datafile)
     result = {} #channel: ([time],[amplitude])
     connection = sqlite3.connect(datafile)
     for channel in range(1, n_channels + 1):
@@ -114,7 +116,7 @@ def plot_amplitude_against_t_peak(datafile, time_variable = "t_90 (s)"):
                 if amplitude_data[i,j,1] > 0: # HARDCODED AMPLITUDE ??
                     continue
                 time_diff = t_50_data[i,j,2] - t_50_data[i,j,1]
-                if time_diff < TIME_DIFF_MIN * 1e-9 or time_diff > TIME_DIFF_MAX * 1e-9:
+                if time_diff < Filters.TIME_DIFF_MIN * 1e-9 or time_diff > Filters.TIME_DIFF_MAX * 1e-9:
                     continue
                 time = (time_data[i,j,1] + 0.5 * time_over_90_data[i,j,1]) * 1e9
                 amplitude = amplitude_data[i,j,1]
@@ -126,7 +128,7 @@ def plot_amplitude_against_t_peak(datafile, time_variable = "t_90 (s)"):
     ax1, ax2 = axes.flatten()
     subplots = (ax1, ax2)
     for channel in (1,2):
-        subplots[channel - 1].plot(result[channel][0], result[channel][1], ".", label=f'Channel {channel}', markersize=2, color=CB_color_cycle[channel])
+        subplots[channel - 1].plot(result[channel][0], result[channel][1], ".", label=f'Channel {channel}', markersize=2, color=Colors.CB_CYCLE[channel])
         subplots[channel - 1].set_xlim(4,9)
         subplots[channel - 1].set_ylim(-2,0)
         subplots[channel - 1].set_xlabel(f"Peak Time (ns)")
@@ -138,7 +140,7 @@ def plot_amplitude_against_t_peak(datafile, time_variable = "t_90 (s)"):
     return None
 
 def plot_amplitude_of_one_pad(datafile, channel, pad_positions):
-    query_dataset(datafile)
+    n_position, n_triggers, n_channels = query_dataset(datafile)
     amplitudes = []
     connection = sqlite3.connect(datafile)
     data = pandas.read_sql(f"SELECT n_position,n_trigger,n_pulse, `t_90 (s)`, `Time over 90% (s)`,`Amplitude (V)`, `t_50 (s)` FROM dataframe_table WHERE n_channel=={channel}", connection)
@@ -152,13 +154,13 @@ def plot_amplitude_of_one_pad(datafile, channel, pad_positions):
             continue
         for j in range(n_triggers):
             amplitude = amplitude_data[i,j,1]
-            if math.isnan(amplitude) or amplitude > AMPLITUDE_THRESHOLD: 
+            if math.isnan(amplitude) or amplitude > Filters.AMPLITUDE_THRESHOLD: 
                 continue
             time_diff = (t_50_data[i,j,2] - t_50_data[i,j,1]) * 1e9
-            if time_diff < TIME_DIFF_MIN or time_diff > TIME_DIFF_MAX:
+            if time_diff < Filters.TIME_DIFF_MIN or time_diff > Filters.TIME_DIFF_MAX:
                 continue
             peak_time = (t_90_data[i,j,1] + 0.5 * time_over_90_data[i,j,1]) * 1e9
-            if peak_time < PEAK_TIME_MIN or peak_time > PEAK_TIME_MAX:
+            if peak_time < Filters.PEAK_TIME_MIN or peak_time > Filters.PEAK_TIME_MAX:
                 continue
             amplitudes.append(amplitude)
 
@@ -261,7 +263,7 @@ def plot_amplitude_everything(directory_in_str = "Data/"):
                     linestyle = "-"
                 else:
                     linestyle = "--"
-                plt.plot(x_axis, y_axis, marker = "o", markersize = 2, linestyle = linestyle, linewidth = 1, color = CB_color_cycle[color_counter], label = f"{sensor}, Ch {channel}")
+                plt.plot(x_axis, y_axis, marker = "o", markersize = 2, linestyle = linestyle, linewidth = 1, color = Colors.CB_CYCLE[color_counter], label = f"{sensor}, Ch {channel}")
                 plt.errorbar(x_axis, y_axis, yerr = y_err, ls='none', ecolor = 'k', elinewidth = 1, capsize = 2)
                 linestyle_counter += 1
             color_counter += 1
@@ -276,7 +278,7 @@ def plot_amplitude_everything(directory_in_str = "Data/"):
 
 def plot_2D_separate(datafile, positions): 
     # makes 2D plot of each channel, and projection of one edge
-    query_dataset(datafile)
+    n_position, n_triggers, n_channels = query_dataset(datafile)
     (x,y) = get_positions(positions)
     (active_channel_1, active_channel_2) = determine_active_channels(datafile)
     amplitudes = {}
@@ -293,13 +295,13 @@ def plot_2D_separate(datafile, positions):
             result = []
             for j in range(n_triggers):
                 amplitude = amplitude_data[i,j,1]
-                if math.isnan(amplitude) or amplitude > AMPLITUDE_THRESHOLD:
+                if math.isnan(amplitude) or amplitude > Filters.AMPLITUDE_THRESHOLD:
                     continue
                 time_diff = (t_50_data[i,j,2] - t_50_data[i,j,1]) * 1e9
-                if time_diff < TIME_DIFF_MIN or time_diff > TIME_DIFF_MAX:
+                if time_diff < Filters.TIME_DIFF_MIN or time_diff > Filters.TIME_DIFF_MAX:
                     continue
                 peak_time = (t_90_data[i,j,1] + 0.5 * time_over_90_data[i,j,1]) * 1e9
-                if peak_time < PEAK_TIME_MIN or peak_time > PEAK_TIME_MAX:
+                if peak_time < Filters.PEAK_TIME_MIN or peak_time > Filters.PEAK_TIME_MAX:
                     continue
                 result.append(amplitude)
             if result == []:
@@ -344,7 +346,7 @@ def plot_2D_separate(datafile, positions):
         x_axis = edge2_projection.index.to_numpy()
         y_axis = edge2_projection.to_numpy()
         err    = edge2_projection_sig.to_numpy()
-    ax1.plot(y_axis, x_axis, marker='.', linestyle='-', color=CB_color_cycle[0], label=f"Channel {0}", markersize=5)
+    ax1.plot(y_axis, x_axis, marker='.', linestyle='-', color=Colors.CB_CYCLE[0], label=f"Channel {0}", markersize=5)
     ax1.invert_yaxis()
     ax1.set_ylabel(r"y ($\mu$m)")
     ax1.set_xlabel(r"Mean Amplitude (V)")
@@ -375,7 +377,7 @@ def plot_2D_separate(datafile, positions):
         x_axis = edge2_projection.index.to_numpy()
         y_axis = edge2_projection.to_numpy()
         err = edge2_projection_sig.to_numpy()
-    ax3.plot(y_axis, x_axis, marker='.', linestyle='-', color=CB_color_cycle[0], label=f"Channel {0}", markersize=5)
+    ax3.plot(y_axis, x_axis, marker='.', linestyle='-', color=Colors.CB_CYCLE[0], label=f"Channel {0}", markersize=5)
     ax3.invert_yaxis()
     ax3.set_ylabel(r"y ($\mu$m)")
     ax3.set_xlabel(r"Mean Amplitude (V)")

@@ -1,7 +1,7 @@
-# IGNORE ALL
+# IGNORE EVERYTHING
 *
 
-# NOT TO IGNORE
+# EXCEPTIONS (files you want to track)
 !/.gitignore
 !Analysis_2.py
 !README.md
@@ -10,5 +10,11 @@
 !Timing.py
 !Amplitude.py
 !Charge_collection.py
+
+# Allow the LGAD_ANALYSIS folder
 !LGAD_ANALYSIS/
 !LGAD_ANALYSIS/**
+
+# BUT ignore its Data subfolder
+LGAD_ANALYSIS/Data/
+LGAD_ANALYSIS/Data/**

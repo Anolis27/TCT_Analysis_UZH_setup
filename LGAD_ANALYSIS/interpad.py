@@ -1,5 +1,6 @@
-# SCRIP FOR ANALYSIS IN INTERPAD REGION
-import data_manager as dm
+# interpad.py
+from config import Paths, Colors, Filters
+from data_manager import *
 import sqlite3
 import pandas
 import numpy
@@ -55,8 +56,8 @@ def get_interpad_distance(datafile, positions, channel1, sensor_strip_positions1
     fit_norm = sigmoid(fine_x, *popt)
 
     # --- Plot Ch 1 ---
-    plt.plot(fine_x, fit_norm, "-", label="Ch 1 Fit", color=CB_color_cycle[0])
-    plt.plot(x_axis, y_norm, ".", markersize=3, label="Ch 1 Data", color=CB_color_cycle[0])
+    plt.plot(fine_x, fit_norm, "-", label="Ch 1 Fit", color=Colors.CB_CYCLE[0])
+    plt.plot(x_axis, y_norm, ".", markersize=3, label="Ch 1 Data", color=Colors.CB_CYCLE[0])
     plt.errorbar(x_axis, y_norm, yerr=y_err_norm, ls="none", ecolor="k",
                  elinewidth=1, capsize=2)
     plt.axvline(x=ch1_x0, ymin=0, ymax=1, color='k', label=f'x = {round(ch1_x0,2)}', ls = (0, (5, 10)), linewidth=0.6)
@@ -88,8 +89,8 @@ def get_interpad_distance(datafile, positions, channel1, sensor_strip_positions1
     fit_norm = sigmoid(fine_x, *popt)
 
     # --- Plot Ch 2 ---
-    plt.plot(fine_x, fit_norm, "-", label="Ch 2 Fit", color=CB_color_cycle[1])
-    plt.plot(x_axis, y_norm, ".", markersize=3, label="Ch 2 Data", color=CB_color_cycle[1])
+    plt.plot(fine_x, fit_norm, "-", label="Ch 2 Fit", color=Colors.CB_CYCLE[1])
+    plt.plot(x_axis, y_norm, ".", markersize=3, label="Ch 2 Data", color=Colors.CB_CYCLE[1])
     plt.errorbar(x_axis, y_norm, yerr=y_err_norm, ls="none", ecolor="k",
                  elinewidth=1, capsize=2)
     plt.axvline(x=ch2_x0, ymin=0, ymax=1, color='k', label=f'x = {round(ch2_x0,2)}', ls = (0, (5, 10)), linewidth=0.6)
@@ -99,7 +100,7 @@ def get_interpad_distance(datafile, positions, channel1, sensor_strip_positions1
     # Sum of channels (no fit)
     # ============================
     plt.plot(both_channels["x axis"], both_channels["y axis"], ".-",
-             markersize=3, linewidth=1, color=CB_color_cycle[3],
+             markersize=3, linewidth=1, color=Colors.CB_CYCLE[3],
              label="Ch 1+2 Data")
     plt.errorbar(both_channels["x axis"], both_channels["y axis"],
                  yerr=both_channels["y error"], ls="none",
@@ -199,7 +200,7 @@ def plot_interpad_distance_against_bias_voltage_v2(directory_in_str = "Data/"):
             y_ax = result[key]["y"]
             x_ax_err = result[key]["x_err"]
             y_ax_err = result[key]["y_err"]
-            plt.plot(x_ax, y_ax, 'o', label=f"{key}", markersize=3, color=CB_color_cycle[color_index], linestyle="--", linewidth=1)
+            plt.plot(x_ax, y_ax, 'o', label=f"{key}", markersize=3, color=Colors.CB_CYCLE[color_index], linestyle="--", linewidth=1)
             plt.errorbar(x_ax, y_ax, xerr = x_ax_err, yerr = y_ax_err, ls='none', ecolor = 'k', elinewidth = 1, capsize = 2)
             plt.title(f"Interpad Distance against Bias Voltage")
             plt.xlabel(r"Bias Voltage (V)")
@@ -214,7 +215,7 @@ def plot_interpad_distance_against_bias_voltage_v2(directory_in_str = "Data/"):
 
 def plot_time_resolution_interpad_region(datafile, positions, pdf):
     (chan1, chan2) = determine_active_channels(datafile)
-    query_dataset(datafile)
+    n_position, n_triggers, n_channels = query_dataset(datafile)
     (x,y) = get_positions(positions)
     time_differences = {} # {y position: [list of time differences]}
     connection = sqlite3.connect(datafile)
@@ -229,15 +230,15 @@ def plot_time_resolution_interpad_region(datafile, positions, pdf):
         for j in range(n_triggers):
             for channel in (chan1, chan2):
                 amplitude = amplitude_data[i,j,1,channel]
-                if math.isnan(amplitude) or amplitude > AMPLITUDE_THRESHOLD:
+                if math.isnan(amplitude) or amplitude > Filters.AMPLITUDE_THRESHOLD:
                     continue
                 time_diff = (t_50_data[i,j,2, channel] - t_50_data[i,j,1, channel]) * 1e9
-                if time_diff < TIME_DIFF_MIN or time_diff > TIME_DIFF_MAX:
+                if time_diff < Filters.TIME_DIFF_MIN or time_diff > Filters.TIME_DIFF_MAX:
                     continue
                 peak_time = (t_90_data[i,j,1, channel] + 0.5 * time_over_90_data[i,j,1, channel]) * 1e9
-                if peak_time < PEAK_TIME_MIN or peak_time > PEAK_TIME_MAX:
+                if peak_time < Filters.PEAK_TIME_MIN or peak_time > Filters.PEAK_TIME_MAX:
                     continue
-                if y[i] < INTERPAD_REGION_MIN or y[i] > INTERPAD_REGION_MAX: # only interpad region
+                if y[i] < Filters.INTERPAD_REGION_MIN or y[i] > Filters.INTERPAD_REGION_MAX: # only interpad region
                     continue
 
                 if y[i] not in time_differences:
@@ -272,7 +273,7 @@ def plot_time_resolution_interpad_region(datafile, positions, pdf):
 
     plt.clf()
     plt.plot(result["x axis"], result["y axis"], ".-",
-            markersize=3, linewidth=1, color=CB_color_cycle[0],
+            markersize=3, linewidth=1, color=Colors.CB_CYCLE[0],
             label=f"Time Resolution")
     plt.errorbar(result["x axis"], result["y axis"],
                 yerr=result["y error"], ls="none",
@@ -329,7 +330,7 @@ def plot_time_resolution_interpad_region_everything(directory_in_str = "Data/"):
                 x_ax = final_plot[key]["x axis"]
                 y_ax = final_plot[key]["y axis"]
                 y_ax_err = final_plot[key]["y error"]
-                plt.plot(x_ax, y_ax, 'o-', label=f"{key}", markersize=3, color=CB_color_cycle[colors_index], linewidth=1)
+                plt.plot(x_ax, y_ax, 'o-', label=f"{key}", markersize=3, color=Colors.CB_CYCLE[colors_index], linewidth=1)
                 plt.errorbar(x_ax, y_ax, yerr = y_ax_err, ls='none', ecolor = 'k', elinewidth = 1, capsize = 2)
                 colors_index += 1
             #plt.ylim(bottom=0.01, top=0.1) # ajust scale
