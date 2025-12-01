@@ -26,17 +26,17 @@ CB_color_cycle = ['#377eb8', '#ff7f00', '#4daf4a', '#f781bf', '#a65628', '#984ea
 colors = ["Red","Green","Blue","Yellow","Cyan","Magenta","Orange","Purple","Pink","Brown","Black","White","Gray","DarkRed","DarkGreen","DarkBlue","LightGray","LightGreen","LightBlue","LightCoral"]
 
 ######## FILES AND DIRECTORIES ########
-test_directory = os.path.expanduser("C:/Users/mathi/Documents/UZH/Data/V1_TW5/100V")
+test_directory = os.path.expanduser("C:/Users/mathi/Documents/UZH/LGAD_ANALYSIS/Data/V2_TW5/100V")
 test_datafile  = os.path.abspath(f"{test_directory}/parsed_from_waveforms.sqlite")
 test_datafile2 = os.path.abspath(f"{test_directory}/measured_data.sqlite")
 test_positions = os.path.abspath(f"{test_directory}/positions.pickle")
 
 ######## FILTERS GLOBAL PARAMETERS ########
-AMPLITUDE_THRESHOLD = -0.07  # V
-TIME_DIFF_MIN = 98         # s
-TIME_DIFF_MAX = 99.5       # s
-PEAK_TIME_MIN = 4.5       # s
-PEAK_TIME_MAX = 6.5       # s
+AMPLITUDE_THRESHOLD = -0.07  # V -0.07
+TIME_DIFF_MIN = 98         # ns
+TIME_DIFF_MAX = 99.5       # ns
+PEAK_TIME_MIN = 4.5       # ns
+PEAK_TIME_MAX = 6.5       # ns
 INTERPAD_REGION_MIN = -75         # um
 INTERPAD_REGION_MAX = 75        # um
 ###########################################
@@ -52,17 +52,17 @@ def query_dataset(datafile):
     #print(f"Querying dataset...")
     global n_position; global n_triggers; global n_channels
     connection = sqlite3.connect(datafile)
-    query = "SELECT n_position FROM dataframe_table WHERE n_trigger = 0 and n_pulse = 1 and n_channel = 1"
+    query = "SELECT n_position FROM dataframe_table WHERE n_trigger = 0 and n_pulse = 1 and n_channel = 3"
     filtered_data = pandas.read_sql_query(query, connection)
     n_position = len(filtered_data)
-    query = "SELECT n_trigger FROM dataframe_table WHERE n_position = 0 and n_pulse = 1 and n_channel = 1"
+    query = "SELECT n_trigger FROM dataframe_table WHERE n_position = 0 and n_pulse = 1 and n_channel = 3"
     filtered_data = pandas.read_sql_query(query, connection)
     n_triggers = len(filtered_data)
     query = "SELECT n_channel FROM dataframe_table WHERE n_position = 0 and n_pulse = 1 and n_trigger = 0"
     filtered_data = pandas.read_sql_query(query, connection)
     n_channels = len(filtered_data)
     connection.close()
-    #print(f"{n_position} positions, {n_triggers} triggers and {n_channels} channels found")
+    print(f"{n_position} positions, {n_triggers} triggers and {n_channels} channels found")
     return None
 
 def get_positions(positions):
@@ -134,7 +134,7 @@ def determine_active_channels(datafile):
 ##        list_to_sort.append(round(sum(amplitudes),3))
 ##        list_to_sort = sorted(list_to_sort)
 ##    return tuple(sorted((result[list_to_sort[0]], result[list_to_sort[1]])))
-    return (1,2)
+    return (3,4)
 
 def plot_amplitude(datafile, positions):
     query_dataset(datafile)
@@ -865,15 +865,19 @@ def get_pad_positions(datafile, positions, channel):
     # filter out the meaningfull amplitudes
     for i in range(n_position):
         result = []
+        print(f"n_position: {i}")
         for j in range(n_triggers):
             amplitude = amplitude_data[i,j,1]
             if math.isnan(amplitude) or amplitude > AMPLITUDE_THRESHOLD:
+                print(f"amplitude: {amplitude}")
                 continue
             time_diff = (t_50_data[i,j,2] - t_50_data[i,j,1]) * 1e9
             if time_diff < TIME_DIFF_MIN or time_diff > TIME_DIFF_MAX:
+                print(f"time diff: {time_diff}")
                 continue
             peak_time = (t_90_data[i,j,1] + 0.5 * time_over_90_data[i,j,1]) * 1e9
             if peak_time < PEAK_TIME_MIN or peak_time > PEAK_TIME_MAX:
+                print(f"peak time: {peak_time}")
                 continue
             result.append(amplitude)
         if result == []:
@@ -891,13 +895,14 @@ def get_pad_positions(datafile, positions, channel):
     # return indices (n_position) where amplitude is non-zero (above numerical noise)
     mask = data_frame['z'].abs() > 1e-6
     pad_position = data_frame.index[mask].tolist()
+    # pad_position = data_frame.index.tolist()
     if not pad_position:
         print(f"[Channel {channel}] No non-zero amplitudes found -> no pad positions")
     return pad_position
 
 def plot_pad_positions(datafile, positions):
     query_dataset(datafile)
-    x, y = get_positions(positions)  # lists of positions in µm
+    (x, y) = get_positions(positions)  # lists of positions in µm
     (active_channel_1, active_channel_2) = determine_active_channels(datafile)
     pad_positions_1 = get_pad_positions(datafile, positions, active_channel_1)
     pad_positions_2 = get_pad_positions(datafile, positions, active_channel_2)
@@ -1609,11 +1614,11 @@ start_time = time.time()
 #plot_time_difference_t50(test_datafile) # Working
 #plot_time_resolution_everything()
 #plot_time_resolution_interpad_region_everything() 
-#plot_pad_positions(test_datafile, test_positions)
+plot_pad_positions(test_datafile, test_positions)
 #plot_sensor_strip_positions(test_datafile, test_positions)
 # query_dataset(test_datafile)
 # print(get_positions(test_positions))
-print(get_channel_amplitude(test_datafile, 1))
+#print(get_channel_amplitude(test_datafile, 1))
 
 
 time_taken = round(time.time() - start_time)

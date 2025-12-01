@@ -2,7 +2,7 @@
 import os
 
 class Paths:
-    BASE_DIR = os.path.expanduser("C:/Users/mathi/Documents/UZH/Data/V1_TW5/100V")
+    BASE_DIR = os.path.expanduser("C:/Users/mathi/Documents/UZH/LGAD_ANALYSIS/Data/V1_TW5/100V")
     DATAFILE = os.path.join(BASE_DIR, "parsed_from_waveforms.sqlite")
     DATAFILE2 = os.path.join(BASE_DIR, "measured_data.sqlite")
     POSITIONS = os.path.join(BASE_DIR, "positions.pickle")

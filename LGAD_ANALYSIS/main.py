@@ -35,3 +35,7 @@ def main():
     minutes = time_taken // 60
     seconds = time_taken - 60*minutes 
     print(f"--- Runtime: {minutes} minutes {seconds} seconds ---")
+
+if __name__ == "__main__":
+    main()
+    
