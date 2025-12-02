@@ -2,16 +2,22 @@
 import os
 
 class Paths:
-    BASE_DIR = os.path.expanduser("C:/Users/mathi/Documents/UZH/LGAD_ANALYSIS/Data/V1_TW5/100V")
+    BASE_DIR = os.path.expanduser("C:/Users/mathi/Documents/UZH/LGAD_ANALYSIS/Data/V2_TW5/50V")
     DATAFILE = os.path.join(BASE_DIR, "parsed_from_waveforms.sqlite")
     DATAFILE2 = os.path.join(BASE_DIR, "measured_data.sqlite")
     POSITIONS = os.path.join(BASE_DIR, "positions.pickle")
 
 class Colors:
     CB_CYCLE = [
-        '#377eb8', '#ff7f00', '#4daf4a', '#f781bf',
-        '#a65628', '#984ea3', '#999999', '#e41a1c', '#dede00'
-    ]
+    '#377eb8', '#ff7f00', '#4daf4a', '#f781bf', '#a65628',
+    '#984ea3', '#999999', '#e41a1c', '#dede00',
+    '#56B4E9', 
+    '#E69F00', 
+    '#009E73', 
+    '#F0E442', 
+    '#0072B2', 
+    '#CC79A7'  
+]
 
     BASIC = [
         "Red","Green","Blue","Yellow","Cyan","Magenta","Orange","Purple",

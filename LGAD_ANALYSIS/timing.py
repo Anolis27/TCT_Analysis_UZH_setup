@@ -8,12 +8,14 @@ import math
 import statistics
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
+import os
+from matplotlib.backends.backend_pdf import PdfPages
 
 def gaussian(x, mu, sig):
     return 1./(numpy.sqrt(2.*numpy.pi)*sig)*numpy.exp(-numpy.power((x - mu)/sig, 2.)/2)
 
 def plot_time_difference_t50(datafile):
-    query_dataset(datafile)
+    n_position, n_triggers, n_channels = query_dataset(datafile)
     time_difference = {}
     connection = sqlite3.connect(datafile)
     for channel in range(1, n_channels + 1):
@@ -32,13 +34,13 @@ def plot_time_difference_t50(datafile):
         bin_min = 97; bin_max = 101
         bin_min = 98; bin_max = 100
         custom_bins = numpy.linspace(bin_min, bin_max, 50 ,endpoint=True)
-        ax1.hist(time_difference[channel], bins=custom_bins, stacked=False ,histtype='step', edgecolor=CB_color_cycle[channel], lw=1, label=f"Channel {channel}", weights= (1 / len(time_difference[channel])) * numpy.ones(len(time_difference[channel])))
+        ax1.hist(time_difference[channel], bins=custom_bins, stacked=False ,histtype='step', edgecolor=Colors.CB_CYCLE[channel], lw=1, label=f"Channel {channel}", weights= (1 / len(time_difference[channel])) * numpy.ones(len(time_difference[channel])))
         ax1.set_xlabel(r"Time (ns)")
         ax1.set_ylabel(f"Frequency")
         ax1.legend(loc = "best")
 
     for channel in (3,4):
-        ax2.hist(time_difference[channel], bins=100, stacked=False ,histtype='step', edgecolor=CB_color_cycle[channel], lw=1, label=f"Channel {channel}", weights= (1 / len(time_difference[channel])) * numpy.ones(len(time_difference[channel])))
+        ax2.hist(time_difference[channel], bins=100, stacked=False ,histtype='step', edgecolor=Colors.CB_CYCLE[channel], lw=1, label=f"Channel {channel}", weights= (1 / len(time_difference[channel])) * numpy.ones(len(time_difference[channel])))
         ax2.set_xlabel(r"Time (ns)")
         ax2.set_ylabel(f"Frequency")
         ax2.legend(loc = "best")
@@ -48,7 +50,7 @@ def plot_time_difference_t50(datafile):
 
 
 def plot_time_resolution_of_one_pad(datafile, channel, pad_positions):
-    query_dataset(datafile)
+    n_position, n_triggers, n_channels = query_dataset(datafile)
     time_differences = []
     connection = sqlite3.connect(datafile)
     data = pandas.read_sql(f"SELECT n_position,n_trigger,n_pulse, `t_90 (s)`, `Time over 90% (s)`,`Amplitude (V)`, `t_50 (s)` FROM dataframe_table WHERE n_channel=={channel}", connection)
@@ -95,7 +97,7 @@ def plot_time_resolution_of_one_pad(datafile, channel, pad_positions):
 
 def plot_time_resolution_everything(directory_in_str = "Data/"):
     final_plot = {} # {sensor: channel: ([voltages], [mean amplitude], [std amplitude (error)])}
-    with PdfPages(f"Output3.pdf") as pdf:
+    with PdfPages(f"timing.pdf") as pdf:
         directory = os.fsencode(directory_in_str)
         for file in os.listdir(directory):
             filename = os.fsdecode(file)
@@ -174,7 +176,7 @@ def plot_time_resolution_everything(directory_in_str = "Data/"):
                     linestyle = "-"
                 else:
                     linestyle = "--"
-                plt.plot(x_axis, y_axis, marker = "o", markersize = 2, linestyle = linestyle, linewidth = 1, color = CB_color_cycle[color_counter], label = f"{sensor}, Ch {channel}")
+                plt.plot(x_axis, y_axis, marker = "o", markersize = 2, linestyle = linestyle, linewidth = 1, color = Colors.CB_CYCLE[color_counter], label = f"{sensor}, Ch {channel}")
                 plt.errorbar(x_axis, y_axis, yerr = y_err, ls='none', ecolor = 'k', elinewidth = 1, capsize = 2)
                 linestyle_counter += 1
             color_counter += 1
@@ -189,7 +191,7 @@ def plot_time_resolution_everything(directory_in_str = "Data/"):
 
 def plot_time_difference_histogram(datafile, positions, y_position, pdf):
     (chan1, chan2) = determine_active_channels(datafile)
-    query_dataset(datafile)
+    n_position, n_triggers, n_channels = query_dataset(datafile)
     (x,y) = get_positions(positions)
     time_differences = [] # list of time differences
     connection = sqlite3.connect(datafile)
@@ -229,7 +231,7 @@ def plot_time_difference_histogram(datafile, positions, y_position, pdf):
     fit_y_axis = gaussian(fit_x_axis, muf, stdf)
 
     plt.clf()
-    plt.hist(time_differences, bins=50, color=CB_color_cycle[0], alpha=0.7)
+    plt.hist(time_differences, bins=50, color=Colors.CB_CYCLE[0], alpha=0.7)
     plt.plot(fit_x_axis, fit_y_axis, color = "r", label=f"Fit (${{\mu}}$ = {round(muf,2)}, ${{\sigma}}$ = {round(stdf,2)})")
     plt.title(f"Time Difference Histogram at y = {y_position} µm — {datafile[5:11]}, {datafile[12:16]}")
     plt.xlabel("Time Difference (ns)")

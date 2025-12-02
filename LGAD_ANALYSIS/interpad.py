@@ -1,12 +1,19 @@
 # interpad.py
 from config import Paths, Colors, Filters
 from data_manager import *
+from amplitude import *
+from timing import *
+from charge_collection import *
+import statistics
 import sqlite3
 import pandas
 import numpy
 import matplotlib.pyplot as plt
 import os
 import math
+from scipy.optimize import curve_fit
+from matplotlib.backends.backend_pdf import PdfPages
+
 
 def sigmoid(x, x0, b, L, k):
     y = L / (1 + numpy.exp(-k*(x-x0))) + b
@@ -127,7 +134,7 @@ def get_interpad_distance(datafile, positions, channel1, sensor_strip_positions1
 def plot_interpad_distance_against_bias_voltage_v2(directory_in_str = "Data/"):
     result = {}
     # Open a PDF file to save all plots
-    with PdfPages('Test.pdf') as pdf:
+    with PdfPages('interpad_distance.pdf') as pdf:
         directory = os.fsencode(directory_in_str)
         # file processing
         for file in os.listdir(directory):

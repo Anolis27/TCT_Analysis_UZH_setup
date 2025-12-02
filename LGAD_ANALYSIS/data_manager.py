@@ -1,5 +1,8 @@
 # data_manager.py
 from config import Paths, Colors, Filters
+from amplitude import *
+from timing import *
+from charge_collection import *
 from scipy import stats
 from scipy.optimize import curve_fit
 import statistics
@@ -18,13 +21,13 @@ def gaussian(x, mu, sig):
     return 1./(numpy.sqrt(2.*numpy.pi)*sig)*numpy.exp(-numpy.power((x - mu)/sig, 2.)/2)
 
 def query_dataset(datafile):
-    #print(f"Querying dataset...")
-    #global n_position; global n_triggers; global n_channels
+    print(f"Querying dataset...")
     connection = sqlite3.connect(datafile)
-    query = "SELECT n_position FROM dataframe_table WHERE n_trigger = 0 and n_pulse = 1 and n_channel = 1"
+    (chan1, chan2) = determine_active_channels(datafile)
+    query = f"SELECT n_position FROM dataframe_table WHERE n_trigger = 0 and n_pulse = 1 and n_channel = {chan1}"
     filtered_data = pandas.read_sql_query(query, connection)
     n_position = len(filtered_data)
-    query = "SELECT n_trigger FROM dataframe_table WHERE n_position = 0 and n_pulse = 1 and n_channel = 1"
+    query = f"SELECT n_trigger FROM dataframe_table WHERE n_position = 0 and n_pulse = 1 and n_channel = {chan1}"
     filtered_data = pandas.read_sql_query(query, connection)
     n_triggers = len(filtered_data)
     query = "SELECT n_channel FROM dataframe_table WHERE n_position = 0 and n_pulse = 1 and n_trigger = 0"
@@ -34,10 +37,11 @@ def query_dataset(datafile):
     #print(f"{n_position} positions, {n_triggers} triggers and {n_channels} channels found")
     return n_position, n_triggers, n_channels
 
+
 def get_positions(positions):
     # get the (x,y) positions from the saved data
     # print(f"Getting position data...")
-    n_position, n_triggers, n_channels = query_dataset(datafile)
+    n_position, n_triggers, n_channels = query_dataset(Paths.DATAFILE)
     positions_data = pandas.read_pickle(positions)
     positions_data.reset_index(['n_x','n_y'], drop=False, inplace=True)
     for _ in {'x','y'}: # remove offset so (0,0) is the center
@@ -94,8 +98,38 @@ def get_channel_amplitude(datafile, channel, pulse_no = 1):
             amplitudes.append(statistics.mean(result))
     return amplitudes
 
-# Hardcoded to return channels 1 and 2 for now
 def determine_active_channels(datafile):
+    connection = sqlite3.connect(datafile)
+    query = "SELECT n_channel, `Amplitude (V)` FROM dataframe_table"
+    df = pandas.read_sql_query(query, connection)
+    connection.close()
+    if df.empty:
+        return ()
+    df["AmpAbs"] = df["Amplitude (V)"].abs()
+    pairs = {
+        (1, 2): None,
+        (3, 4): None,
+    }
+    mean_values = {}
+
+    for pair in pairs:
+        chA, chB = pair
+
+        df_pair = df[df["n_channel"].isin(pair)]
+
+        if df_pair.empty:
+            mean_values[pair] = 0
+        else:
+            mean_values[pair] = df_pair["AmpAbs"].mean()
+    # chose the pair with the highest mean amplitude
+    best_pair = max(mean_values, key=mean_values.get)
+    if mean_values[best_pair] == 0:
+        return ()
+    return best_pair
+
+
+# Hardcoded to return channels 1 and 2 for now
+## def determine_active_channels(datafile):
 ##    n_position, n_triggers, n_channels = query_dataset(datafile)
 ##    result = {}; list_to_sort = []
 ##    for channel in range(1, n_channels + 1):
@@ -104,7 +138,7 @@ def determine_active_channels(datafile):
 ##        list_to_sort.append(round(sum(amplitudes),3))
 ##        list_to_sort = sorted(list_to_sort)
 ##    return tuple(sorted((result[list_to_sort[0]], result[list_to_sort[1]])))
-    return (1,2)
+##    return (1,2)
 
 
 def get_pad_positions(datafile, positions, channel): 
@@ -260,9 +294,9 @@ def get_sensor_strip_positions(datafile, positions, channel):
             row_index = position_frame.query(f"x == {x_value} and y == {y_value}").index[0]
             pad_position.append(row_index)
     # If you want to see which x and y is selected
-    print(f"Valid x: {valid_x}")
-    print(f"Valid y: {valid_y}")
-    print(f"pad position strip: {pad_position}")
+    # print(f"Valid x: {valid_x}")
+    # print(f"Valid y: {valid_y}")
+    # print(f"pad position strip: {pad_position}")
     return pad_position
 
 def plot_sensor_strip_positions(datafile, positions):

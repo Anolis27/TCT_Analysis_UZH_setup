@@ -185,7 +185,7 @@ def plot_amplitude_of_one_pad(datafile, channel, pad_positions):
 
 def plot_amplitude_everything(directory_in_str = "Data/"):
     final_plot = {} # {sensor: channel: ([voltages], [mean amplitude], [std amplitude (error)])}
-    with PdfPages(f"Output.pdf") as pdf:
+    with PdfPages(f"amplitude.pdf") as pdf:
         directory = os.fsencode(directory_in_str)
         for file in os.listdir(directory):
             filename = os.fsdecode(file)

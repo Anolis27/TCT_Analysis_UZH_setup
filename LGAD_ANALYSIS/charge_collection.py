@@ -1,13 +1,22 @@
 # SCRIPT FOR CHARGE COLLECTION ANALYSIS
-import data_manager as dm
+from config import Paths, Colors, Filters
+from amplitude import *
+from data_manager import *
 import sqlite3
 import pandas
+import numpy
+import matplotlib.pyplot as plt
+import os
+from matplotlib.backends.backend_pdf import PdfPages
+from scipy.optimize import curve_fit
+import math
+import statistics
 
 def gaussian(x, mu, sig):
     return 1./(numpy.sqrt(2.*numpy.pi)*sig)*numpy.exp(-numpy.power((x - mu)/sig, 2.)/2)
 
 def plot_collected_charge(datafile):
-    dm.query_dataset(datafile)
+    n_position, n_triggers, n_channels = query_dataset(datafile)
     collected_charges = {}
     connection = sqlite3.connect(datafile)
     for channel in range(1, n_channels + 1):
@@ -21,7 +30,7 @@ def plot_collected_charge(datafile):
     for channel in (1,2):       
         bin_min = -0.5; bin_max = 0.5       # HARDCODED BINS ??
         custom_bins = numpy.linspace(bin_min, bin_max, 100 ,endpoint=True)
-        ax1.hist(collected_charges[channel], bins=custom_bins, stacked=False ,histtype='step', edgecolor=CB_color_cycle[channel], lw=1, label=f"Channel {channel}", weights= (1 / len(collected_charges[channel])) * numpy.ones(len(collected_charges[channel])))
+        ax1.hist(collected_charges[channel], bins=custom_bins, stacked=False ,histtype='step', edgecolor=Colors.CB_CYCLE[channel], lw=1, label=f"Channel {channel}", weights= (1 / len(collected_charges[channel])) * numpy.ones(len(collected_charges[channel])))
         ax1.set_xlabel(r"Collected Charge (n V s)")
         ax1.set_ylabel(f"Frequency")
         ax1.legend(loc = "best")
@@ -30,7 +39,7 @@ def plot_collected_charge(datafile):
         bin_min = -0.1; bin_max = 0.02       # HARDCODED BINS ??
         bin_min = -0.02
         custom_bins = numpy.linspace(bin_min, bin_max, 100 ,endpoint=True)
-        ax2.hist(collected_charges[channel], bins=custom_bins, stacked=False ,histtype='step', edgecolor=CB_color_cycle[channel], lw=1, label=f"Channel {channel}", weights= (1 / len(collected_charges[channel])) * numpy.ones(len(collected_charges[channel])))
+        ax2.hist(collected_charges[channel], bins=custom_bins, stacked=False ,histtype='step', edgecolor=Colors.CB_CYCLE[channel], lw=1, label=f"Channel {channel}", weights= (1 / len(collected_charges[channel])) * numpy.ones(len(collected_charges[channel])))
         ax2.set_xlabel(r"Collected Charge (n V s)")
         ax2.set_ylabel(f"Frequency")
         ax2.legend(loc = "best")
@@ -39,7 +48,7 @@ def plot_collected_charge(datafile):
     return None
 
 def plot_collected_charge_of_one_pad(datafile, channel, pad_positions):
-    query_dataset(datafile)
+    n_position, n_triggers, n_channels = query_dataset(datafile)
     collected_charges = []
     connection = sqlite3.connect(datafile)
     data = pandas.read_sql(f"SELECT n_position,n_trigger,n_pulse, `t_90 (s)`, `Time over 90% (s)`,`Amplitude (V)`, `Collected charge (V s)`, `t_50 (s)` FROM dataframe_table WHERE n_channel=={channel}", connection)
@@ -55,13 +64,13 @@ def plot_collected_charge_of_one_pad(datafile, channel, pad_positions):
         for j in range(n_triggers):
             amplitude = amplitude_data[i,j,1]
             collected_charge = collected_charge_data[i,j,1] * 1e9
-            if math.isnan(amplitude) or amplitude > AMPLITUDE_THRESHOLD:
+            if math.isnan(amplitude) or amplitude > Filters.AMPLITUDE_THRESHOLD:
                 continue
             time_diff = (t_50_data[i,j,2] - t_50_data[i,j,1]) * 1e9
-            if time_diff < TIME_DIFF_MIN or time_diff > TIME_DIFF_MAX:
+            if time_diff < Filters.TIME_DIFF_MIN or time_diff > Filters.TIME_DIFF_MAX:
                 continue
             peak_time = (t_90_data[i,j,1] + 0.5 * time_over_90_data[i,j,1]) * 1e9
-            if peak_time < PEAK_TIME_MIN or peak_time > PEAK_TIME_MAX:
+            if peak_time < Filters.PEAK_TIME_MIN or peak_time > Filters.PEAK_TIME_MAX:
                 continue
             if math.isnan(collected_charge) or collected_charge > 0:
                 continue
@@ -86,7 +95,7 @@ def plot_collected_charge_of_one_pad(datafile, channel, pad_positions):
 
 def plot_collected_charge_everything(directory_in_str = "Data/"):
     final_plot = {} # {sensor: channel: ([voltages], [mean amplitude], [std amplitude (error)])}
-    with PdfPages(f"Output2.pdf") as pdf:
+    with PdfPages(f"collected_charge.pdf") as pdf:
         directory = os.fsencode(directory_in_str)
         for file in os.listdir(directory):
             filename = os.fsdecode(file)
@@ -166,7 +175,7 @@ def plot_collected_charge_everything(directory_in_str = "Data/"):
                     linestyle = "-"
                 else:
                     linestyle = "--"
-                plt.plot(x_axis, y_axis, marker = "o", markersize = 2, linestyle = linestyle, linewidth = 1, color = CB_color_cycle[color_counter], label = f"{sensor}, Ch {channel}")
+                plt.plot(x_axis, y_axis, marker = "o", markersize = 2, linestyle = linestyle, linewidth = 1, color = Colors.CB_CYCLE[color_counter], label = f"{sensor}, Ch {channel}")
                 plt.errorbar(x_axis, y_axis, yerr = y_err, ls='none', ecolor = 'k', elinewidth = 1, capsize = 2)
                 linestyle_counter += 1
             color_counter += 1
