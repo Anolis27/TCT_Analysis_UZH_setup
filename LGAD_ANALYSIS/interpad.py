@@ -3,7 +3,6 @@ from config import Paths, Colors, Filters
 from data_manager import *
 from amplitude import *
 from timing import *
-from charge_collection import *
 import statistics
 import sqlite3
 import pandas
@@ -18,9 +17,6 @@ from matplotlib.backends.backend_pdf import PdfPages
 def sigmoid(x, x0, b, L, k):
     y = L / (1 + numpy.exp(-k*(x-x0))) + b
     return (y)
-
-def gaussian(x, mu, sig):
-    return 1./(numpy.sqrt(2.*numpy.pi)*sig)*numpy.exp(-numpy.power((x - mu)/sig, 2.)/2)
 
 def get_interpad_distance(datafile, positions, channel1, sensor_strip_positions1,
                           channel2, sensor_strip_positions2, pdf):

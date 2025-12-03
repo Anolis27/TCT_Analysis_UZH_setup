@@ -1,8 +1,6 @@
 # data_manager.py
 from config import Paths, Colors, Filters
 from amplitude import *
-from timing import *
-from charge_collection import *
 from scipy import stats
 from scipy.optimize import curve_fit
 import statistics

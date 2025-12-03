@@ -12,8 +12,6 @@ from scipy.optimize import curve_fit
 import math
 import statistics
 
-def gaussian(x, mu, sig):
-    return 1./(numpy.sqrt(2.*numpy.pi)*sig)*numpy.exp(-numpy.power((x - mu)/sig, 2.)/2)
 
 def plot_collected_charge(datafile):
     n_position, n_triggers, n_channels = query_dataset(datafile)

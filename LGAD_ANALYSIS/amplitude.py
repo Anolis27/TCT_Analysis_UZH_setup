@@ -16,10 +16,6 @@ from matplotlib import figure
 from matplotlib.backends.backend_pdf import PdfPages
 import statistics
 
-
-def gaussian(x, mu, sig):
-    return 1./(numpy.sqrt(2.*numpy.pi)*sig)*numpy.exp(-numpy.power((x - mu)/sig, 2.)/2)
-
 def plot_amplitude(datafile, positions):
     n_position, n_triggers, n_channels = query_dataset(datafile)
     amplitudes = {}
