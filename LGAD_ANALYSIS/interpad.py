@@ -33,8 +33,7 @@ def get_interpad_distance(datafile, positions, channel1, sensor_strip_positions1
     x_axis = numpy.array(channel1_result["x axis"])
     y_axis = numpy.array(channel1_result["y axis"])
     y_err  = numpy.array(channel1_result["y error"])
-
-    print(y_axis)
+    #print(y_axis)
 
     # --- Normalize once: scale data to [0, 1] ---
     y_min = y_axis.min()
