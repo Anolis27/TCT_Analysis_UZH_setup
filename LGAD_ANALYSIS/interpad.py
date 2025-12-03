@@ -324,7 +324,7 @@ def plot_time_resolution_interpad_region(datafile, positions, pdf):
 def plot_time_resolution_interpad_region_everything(directory_in_str = "Data/"):
     # Open a PDF file to save all plots
     final_plot = {}
-    with PdfPages('Time_Resolution_Interpad_Region_Everything.pdf') as pdf:
+    with PdfPages('timing_interpad_region.pdf') as pdf:
         directory = os.fsencode(directory_in_str)
         # file processing
         for file in os.listdir(directory):
@@ -352,7 +352,7 @@ def plot_time_resolution_interpad_region_everything(directory_in_str = "Data/"):
                 print(f"Current Sensor: {filename} | Voltage: {filename2}")
                 final_plot[filename2] = plot_time_resolution_interpad_region(data_file, positions_file, pdf)
             plt.clf()
-            plt.title(f"Time Resolution in Interpad Region vs bias Voltage")
+            plt.title(f"Time Resolution in Interpad Region vs bias Voltage, {filename}")
             plt.xlabel(r"y Position ($\mu$m)")
             plt.ylabel("Time Resolution (ns)")
             plt.gca().invert_xaxis()
@@ -365,9 +365,15 @@ def plot_time_resolution_interpad_region_everything(directory_in_str = "Data/"):
                 plt.plot(x_ax, y_ax, 'o-', label=f"{key}", markersize=3, color=Colors.CB_CYCLE[colors_index], linewidth=1)
                 plt.errorbar(x_ax, y_ax, yerr = y_ax_err, ls='none', ecolor = 'k', elinewidth = 1, capsize = 2)
                 colors_index += 1
-            #plt.ylim(bottom=0.01, top=0.1) # ajust scale
+            plt.ylim(bottom=0.015, top=0.09) # ajust scale
             #plt.legend(loc='upper right', ncol = 1)
             plt.legend(loc='best', ncol = 1)
+            # plt.legend(
+            #     loc='center left',
+            #     bbox_to_anchor=(1, 0.5),
+            #     fontsize='small'
+            # )
+            # plt.tight_layout()
             fig = plt.gcf() # get current figure
             pdf.savefig(fig, dpi = 100, bbox_inches='tight')
     return None

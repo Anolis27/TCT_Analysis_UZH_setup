@@ -1,5 +1,5 @@
 # Amplitude.py
-from config import Paths, Colors, Filters
+from config import Paths, Colors, Filters, Subplots
 from data_manager import *
 import os
 import sqlite3
@@ -170,12 +170,13 @@ def plot_amplitude_of_one_pad(datafile, channel, pad_positions):
     (muf, stdf), covf = curve_fit(gaussian, bin_centers, n, maxfev=10000, p0=[mu, std])
     fit_x_axis = numpy.linspace(min(bin_centers), max(bin_centers), 200, endpoint=True)
     fit_y_axis = gaussian(fit_x_axis, muf, stdf)
-    plt.plot(fit_x_axis, fit_y_axis, color = "r", label=f"Fit (${{\mu}}$ = {round(muf,2)}, ${{\sigma}}$ = {round(stdf,2)})")
-    plt.xlabel(f"Amplitude (V)")
-    plt.ylabel(f"Frequency")
-    plt.legend(loc = "best")
-    plt.title(f'{datafile[5:11]}, {datafile[12:16]}, Channel {channel}')
-    # plt.show()
+    if Subplots.AMPLITUDE_ONE_PAD:
+        plt.plot(fit_x_axis, fit_y_axis, color = "r", label=f"Fit (${{\mu}}$ = {round(muf,2)}, ${{\sigma}}$ = {round(stdf,2)})")
+        plt.xlabel(f"Amplitude (V)")
+        plt.ylabel(f"Frequency")
+        plt.legend(loc = "best")
+        plt.title(f'{datafile[5:11]}, {datafile[12:16]}, Channel {channel}')
+        # plt.show()
     return (muf, stdf)
 
 
@@ -203,7 +204,7 @@ def plot_amplitude_everything(directory_in_str = "Data/"):
                 if filename2.startswith('.'): #      # to ignore any hidden file
                     continue                
                 directory3_in_str = f"{directory2_in_str}{filename2}/"
-                if filename2 in ("50V","80V","100V", "130V"):
+                if filename2 in ("50V","70V","80V","90V","100V","110V","120V","130V"):
                     data_file       = f"{directory3_in_str}parsed_from_waveforms.sqlite"
                     positions_file  = f"{directory3_in_str}positions.pickle"
                     (chan1, chan2) = determine_active_channels(data_file)
@@ -234,18 +235,21 @@ def plot_amplitude_everything(directory_in_str = "Data/"):
                 final_plot[filename][chan1][0].append(voltage)
                 final_plot[filename][chan1][1].append(abs(muf)) # take absolute value of amplitude
                 final_plot[filename][chan1][2].append(stdf)
-                plt.title(f'{filename}, {filename2}, Channel {chan1}')
-                fig = plt.gcf()
-                pdf.savefig(fig, dpi = 100)
+                if Subplots.AMPLITUDE_ONE_PAD:
+                    plt.title(f'{filename}, {filename2}, Channel {chan1}')
+                    fig = plt.gcf()
+                    pdf.savefig(fig, dpi = 100)
+                    plt.clf()
 
-                plt.clf()
                 (muf, stdf) = plot_amplitude_of_one_pad(data_file, chan2, pad_positions[chan2])
                 final_plot[filename][chan2][0].append(voltage)
                 final_plot[filename][chan2][1].append(abs(muf)) # take absolute value of amplitude
                 final_plot[filename][chan2][2].append(stdf)
-                plt.title(f'{filename}, {filename2}, Channel {chan2}')
-                fig = plt.gcf()
-                pdf.savefig(fig, dpi = 100)
+                if Subplots.AMPLITUDE_ONE_PAD:
+                    plt.title(f'{filename}, {filename2}, Channel {chan2}')
+                    fig = plt.gcf()
+                    pdf.savefig(fig, dpi = 100)
+                    plt.clf()
                 
         plt.clf()
         color_counter = 0

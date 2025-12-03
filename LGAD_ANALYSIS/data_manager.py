@@ -198,13 +198,13 @@ def plot_pad_positions(datafile, positions):
     if pad_positions_1:
         xs1 = [x[i] for i in pad_positions_1]
         ys1 = [y[i] for i in pad_positions_1]
-        plt.scatter(xs1, ys1, s=30, color=Filters.CB_CYCLE[0], edgecolor='k', label=f'Pad Positions Ch {active_channel_1}', zorder=3)
+        plt.scatter(xs1, ys1, s=30, color=Colors.CB_CYCLE[0], edgecolor='k', label=f'Pad Positions Ch {active_channel_1}', zorder=3)
 
     # channel 2 pads
     if pad_positions_2:
         xs2 = [x[i] for i in pad_positions_2]
         ys2 = [y[i] for i in pad_positions_2]
-        plt.scatter(xs2, ys2, s=30, color=Filters.CB_CYCLE[1], edgecolor='k', label=f'Pad Positions Ch {active_channel_2}', zorder=4)
+        plt.scatter(xs2, ys2, s=30, color=Colors.CB_CYCLE[1], edgecolor='k', label=f'Pad Positions Ch {active_channel_2}', zorder=4)
 
     plt.xlabel(r"x ($\mu$m)")
     plt.ylabel(r"y ($\mu$m)")

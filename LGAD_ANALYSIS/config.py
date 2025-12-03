@@ -2,7 +2,7 @@
 import os
 
 class Paths:
-    BASE_DIR = os.path.expanduser("C:/Users/mathi/Documents/UZH/LGAD_ANALYSIS/Data/V2_TW5/50V")
+    BASE_DIR = os.path.expanduser("C:/Users/mathi/Documents/UZH/LGAD_ANALYSIS/Data/V2_TW1/50V")
     DATAFILE = os.path.join(BASE_DIR, "parsed_from_waveforms.sqlite")
     DATAFILE2 = os.path.join(BASE_DIR, "measured_data.sqlite")
     POSITIONS = os.path.join(BASE_DIR, "positions.pickle")
@@ -25,12 +25,17 @@ class Colors:
         "DarkBlue","LightGray","LightGreen","LightBlue","LightCoral"
     ]
 
-class Filters:
-    AMPLITUDE_THRESHOLD = -0.07  # V
-    TIME_DIFF_MIN = 98      # ns
-    TIME_DIFF_MAX = 99.5     # ns
-    PEAK_TIME_MIN = 4.5     # ns
-    PEAK_TIME_MAX = 6.5     # ns
+class Filters:  # key values for Ti-LGAD
+    AMPLITUDE_THRESHOLD = -0.07  # V    -0.07
+    TIME_DIFF_MIN = 98      # ns    98
+    TIME_DIFF_MAX = 99.5     # ns   99.5
+    PEAK_TIME_MIN = 4.5     # ns    4.5
+    PEAK_TIME_MAX = 7     # ns    6.5
+
+class Subplots:
+    AMPLITUDE_ONE_PAD = True
+    CHARGE_COLLECTION_ONE_PAD = True
+    TIMING_ONE_PAD = True
 
 class InterpadConfig:
     INTERPAD_REGION_MIN = -75  # um
