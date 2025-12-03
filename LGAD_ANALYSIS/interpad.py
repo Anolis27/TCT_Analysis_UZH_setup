@@ -1,5 +1,5 @@
 # interpad.py
-from config import Paths, Colors, Filters
+from config import Paths, Colors, Filters, InterpadConfig
 from data_manager import *
 from amplitude import *
 from timing import *
@@ -50,19 +50,36 @@ def get_interpad_distance(datafile, positions, channel1, sensor_strip_positions1
         maxfev=10000, method="dogbox"
     )
 
+    # === get x at 50% ===
     ch1_x0 = popt[0]
+    ch1_L = popt[2]
+    ch1_k = popt[3]
+    print(f"ch1_k: {ch1_k}, ch1_L: {ch1_L}, ch1_x0: {ch1_x0}")
     ch1_x0_uncertainty = math.sqrt(pcov[0][0])
+    # === Compute x at INTERPAD_FRACTION of the sigmoid ===
+    ch1_xfrac = ch1_x0 - (1/ch1_k) * numpy.log(1/(InterpadConfig.INTERPAD_FRACTION if ch1_L > 0 else (1 - InterpadConfig.INTERPAD_FRACTION)) - 1)
+    # === Compute uncertainty on x at INTERPAD_FRACTION of the sigmoid ===
+    # partial derivatives
+    ch1_dx_dx0 = 1
+    ch1_dx_dk  = numpy.log(1/InterpadConfig.INTERPAD_FRACTION - 1) / (ch1_k**2)
+    # uncertainties
+    ch1_sigma_x0 = numpy.sqrt(pcov[0,0])
+    ch1_sigma_k  = numpy.sqrt(pcov[3,3])
+    cov_x0k  = pcov[0,3]  # covariance x0-k
+    # error propagation
+    ch1_sigma_xfrac = numpy.sqrt( (ch1_dx_dx0*ch1_sigma_x0)**2 + (ch1_dx_dk*ch1_sigma_k)**2 + 2*ch1_dx_dx0*ch1_dx_dk*cov_x0k )
+
 
     # --- Generate fit curve ---
     fine_x = numpy.linspace(x_axis.min(), x_axis.max(), 500)
     fit_norm = sigmoid(fine_x, *popt)
 
     # --- Plot Ch 1 ---
-    plt.plot(fine_x, fit_norm, "-", label="Ch 1 Fit", color=Colors.CB_CYCLE[0])
-    plt.plot(x_axis, y_norm, ".", markersize=3, label="Ch 1 Data", color=Colors.CB_CYCLE[0])
+    plt.plot(fine_x, fit_norm, "-", label=f"Ch {channel1} Fit", color=Colors.CB_CYCLE[0])
+    plt.plot(x_axis, y_norm, ".", markersize=3, label=f"Ch {channel1} Data", color=Colors.CB_CYCLE[0])
     plt.errorbar(x_axis, y_norm, yerr=y_err_norm, ls="none", ecolor="k",
                  elinewidth=1, capsize=2)
-    plt.axvline(x=ch1_x0, ymin=0, ymax=1, color='k', label=f'x = {round(ch1_x0,2)}', ls = (0, (5, 10)), linewidth=0.6)
+    plt.axvline(x=ch1_xfrac, ymin=0, ymax=1, color='k', label=f'x{channel1} at {InterpadConfig.INTERPAD_FRACTION*100}% = {round(ch1_xfrac,2)}', ls = (0, (5, 10)), linewidth=0.6)
 
     # ============================
     # Channel 2
@@ -83,19 +100,35 @@ def get_interpad_distance(datafile, positions, channel1, sensor_strip_positions1
     popt, pcov = curve_fit(sigmoid, x_axis, y_norm, p0=guess,
                            maxfev=10000, method="dogbox")
 
+    # === get x at 50% ===
     ch2_x0 = popt[0]
+    ch2_L = popt[2]
+    ch2_k = popt[3]
+    print(f"ch2_k: {ch2_k}, ch2_L: {ch2_L}, ch2_x0: {ch2_x0}")
     ch2_x0_uncertainty = math.sqrt(pcov[0][0])
+    # === Compute x at INTERPAD_FRACTION of the sigmoid ===
+    ch2_xfrac = ch2_x0 - (1/ch2_k) * numpy.log(1/(InterpadConfig.INTERPAD_FRACTION if ch2_L > 0 else (1 - InterpadConfig.INTERPAD_FRACTION)) - 1)
+    # === Compute uncertainty on x at INTERPAD_FRACTION of the sigmoid ===
+    # partial derivatives
+    ch2_dx_dx0 = 1
+    ch2_dx_dk  = numpy.log(1/InterpadConfig.INTERPAD_FRACTION - 1) / (ch2_k**2)
+    # uncertainties
+    ch2_sigma_x0 = numpy.sqrt(pcov[0,0])
+    ch2_sigma_k  = numpy.sqrt(pcov[3,3])
+    cov_x0k  = pcov[0,3]  # covariance x0-k
+    # error propagation
+    ch2_sigma_xfrac = numpy.sqrt( (ch2_dx_dx0*ch2_sigma_x0)**2 + (ch2_dx_dk*ch2_sigma_k)**2 + 2*ch2_dx_dx0*ch2_dx_dk*cov_x0k )
 
     # --- Fit curve ---
     fine_x = numpy.linspace(x_axis.min(), x_axis.max(), 500)
     fit_norm = sigmoid(fine_x, *popt)
 
     # --- Plot Ch 2 ---
-    plt.plot(fine_x, fit_norm, "-", label="Ch 2 Fit", color=Colors.CB_CYCLE[1])
-    plt.plot(x_axis, y_norm, ".", markersize=3, label="Ch 2 Data", color=Colors.CB_CYCLE[1])
+    plt.plot(fine_x, fit_norm, "-", label=f"Ch {channel2} Fit", color=Colors.CB_CYCLE[1])
+    plt.plot(x_axis, y_norm, ".", markersize=3, label=f"Ch {channel2} Data", color=Colors.CB_CYCLE[1])
     plt.errorbar(x_axis, y_norm, yerr=y_err_norm, ls="none", ecolor="k",
                  elinewidth=1, capsize=2)
-    plt.axvline(x=ch2_x0, ymin=0, ymax=1, color='k', label=f'x = {round(ch2_x0,2)}', ls = (0, (5, 10)), linewidth=0.6)
+    plt.axvline(x=ch2_xfrac, ymin=0, ymax=1, color='k', label=f'x{channel2} at {InterpadConfig.INTERPAD_FRACTION*100}% = {round(ch2_xfrac,2)}', ls = (0, (5, 10)), linewidth=0.6)
 
 
     # ============================
@@ -103,7 +136,7 @@ def get_interpad_distance(datafile, positions, channel1, sensor_strip_positions1
     # ============================
     plt.plot(both_channels["x axis"], both_channels["y axis"], ".-",
              markersize=3, linewidth=1, color=Colors.CB_CYCLE[3],
-             label="Ch 1+2 Data")
+             label=f"Ch {channel1}+{channel2} Data")
     plt.errorbar(both_channels["x axis"], both_channels["y axis"],
                  yerr=both_channels["y error"], ls="none",
                  ecolor="k", elinewidth=1, capsize=2)
@@ -119,10 +152,7 @@ def get_interpad_distance(datafile, positions, channel1, sensor_strip_positions1
     plt.tight_layout()
     #plt.show()
 
-    # ============================
-    # Return interpad distance
-    # ============================
-    return (ch1_x0 - ch2_x0, ch1_x0_uncertainty + ch2_x0_uncertainty)
+    return (abs(ch1_xfrac - ch2_xfrac), math.sqrt(ch1_sigma_xfrac**2 + ch2_sigma_xfrac**2))
 
 
 
@@ -202,7 +232,7 @@ def plot_interpad_distance_against_bias_voltage_v2(directory_in_str = "Data/"):
             y_ax = result[key]["y"]
             x_ax_err = result[key]["x_err"]
             y_ax_err = result[key]["y_err"]
-            plt.plot(x_ax, y_ax, 'o', label=f"{key}", markersize=3, color=Colors.CB_CYCLE[color_index], linestyle="--", linewidth=1)
+            plt.plot(x_ax, y_ax, 'o', label=f"{key}", markersize=3, color=Colors.CB_CYCLE[color_index], linestyle="-", linewidth=1)
             plt.errorbar(x_ax, y_ax, xerr = x_ax_err, yerr = y_ax_err, ls='none', ecolor = 'k', elinewidth = 1, capsize = 2)
             plt.title(f"Interpad Distance against Bias Voltage")
             plt.xlabel(r"Bias Voltage (V)")
@@ -240,7 +270,7 @@ def plot_time_resolution_interpad_region(datafile, positions, pdf):
                 peak_time = (t_90_data[i,j,1, channel] + 0.5 * time_over_90_data[i,j,1, channel]) * 1e9
                 if peak_time < Filters.PEAK_TIME_MIN or peak_time > Filters.PEAK_TIME_MAX:
                     continue
-                if y[i] < Filters.INTERPAD_REGION_MIN or y[i] > Filters.INTERPAD_REGION_MAX: # only interpad region
+                if y[i] < InterpadConfig.INTERPAD_REGION_MIN or y[i] > InterpadConfig.INTERPAD_REGION_MAX: # only interpad region
                     continue
 
                 if y[i] not in time_differences:

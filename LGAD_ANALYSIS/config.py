@@ -31,5 +31,8 @@ class Filters:
     TIME_DIFF_MAX = 99.5     # ns
     PEAK_TIME_MIN = 4.5     # ns
     PEAK_TIME_MAX = 6.5     # ns
+
+class InterpadConfig:
     INTERPAD_REGION_MIN = -75  # um
     INTERPAD_REGION_MAX = 75    # um
+    INTERPAD_FRACTION = 0.9     # fraction of the sigmoid used for interpad distance calculation

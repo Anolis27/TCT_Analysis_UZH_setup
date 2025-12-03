@@ -450,13 +450,13 @@ def project_onto_y_two_channels(datafile, positions, channel1, channel2, sensor_
         result["x axis"].append(y_position)
         result["y axis"].append(abs(muf))
         result["y error"].append(stdf)
-        plt.plot(fit_x_axis, fit_y_axis, color = "r", label=f"Fit (${{\mu}}$ = {round(muf,2)}, ${{\sigma}}$ = {round(stdf,2)})")
-        plt.xlabel(f"Amplitude")
-        plt.ylabel(f"Frequency")
-        plt.legend(loc = "best")
-        plt.title(f'{datafile[5:11]}, {datafile[12:16]}, Channel {channel1} + {channel2}, y: {y_position} ${{\mu}}$m, N: {len(hist)}')
-        fig = plt.gcf()
-        pdf.savefig(fig, dpi = 100)
+        # plt.plot(fit_x_axis, fit_y_axis, color = "r", label=f"Fit (${{\mu}}$ = {round(muf,2)}, ${{\sigma}}$ = {round(stdf,2)})")
+        # plt.xlabel(f"Amplitude")
+        # plt.ylabel(f"Frequency")
+        # plt.legend(loc = "best")
+        # plt.title(f'{datafile[5:11]}, {datafile[12:16]}, Channel {channel1} + {channel2}, y: {y_position} ${{\mu}}$m, N: {len(hist)}')
+        # fig = plt.gcf()
+        # pdf.savefig(fig, dpi = 100)
     return result
 
 def project_onto_y_one_channel(datafile, positions, channel, sensor_strip_positions):
@@ -516,10 +516,12 @@ def project_onto_y_one_channel(datafile, positions, channel, sensor_strip_positi
         result["y axis"].append(abs(muf))
         result["y error"].append(stdf)  
 
-        plt.title(f"Histogram amplitudes — y = {y_position}")
-        plt.xlabel("Amplitude")
-        plt.ylabel("Frequency")
-        plt.legend()
-
-        #plt.show()
+        # plt.title(f"Histogram amplitudes — y = {y_position}")
+        # plt.xlabel("Amplitude")
+        # plt.ylabel("Frequency")
+        # plt.legend()
+        # fig = plt.gcf()
+        # plt.plot(fit_x_axis, fit_y_axis, color = "r", label=f"Fit (${{\mu}}$ = {round(muf,2)}, ${{\sigma}}$ = {round(stdf,2)})")
+        # pdf.savefig(fig, dpi = 100)
+        # plt.show()
     return result
