@@ -353,7 +353,7 @@ def plot_time_resolution_interpad_region_everything(directory_in_str = "Data/"):
                 final_plot[filename2] = plot_time_resolution_interpad_region(data_file, positions_file, pdf)
             plt.clf()
             plt.title(f"Time Resolution in Interpad Region vs bias Voltage, {filename}")
-            plt.xlabel(r"y Position ($\mu$m)")
+            plt.xlabel(r"x Position ($\mu$m)")
             plt.ylabel("Time Resolution (ns)")
             plt.gca().invert_xaxis()
             plt.tight_layout()

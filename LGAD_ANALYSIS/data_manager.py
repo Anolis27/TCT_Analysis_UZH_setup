@@ -2,6 +2,7 @@
 from config import Paths, Colors, Filters
 from scipy import stats
 from scipy.optimize import curve_fit
+import os
 import statistics
 import sqlite3
 import pandas
@@ -354,3 +355,37 @@ def plot_sensor_strip_positions(datafile, positions):
     plt.show()
 
     return None
+
+# def save(filename, data, folder="saved_results"):
+#     # make sure the folder exists
+#     os.makedirs(folder, exist_ok=True)
+#     basepath = os.path.join(folder, filename)
+
+#     if isinstance(data, numpy.ndarray):
+#         # Save array → .npy
+#         numpy.save(basepath + ".npy", data)
+
+#     elif isinstance(data, dict):
+#         # Check that each value is indeed an array
+#         for k, v in data.items():
+#             if not isinstance(v, numpy.ndarray):
+#                 raise TypeError(f"The key '{k}' does not contain a numpy array.")
+        
+#         # Save dict → .npz
+#         numpy.savez(basepath + ".npz", **data)
+#     else:
+#         raise TypeError("Data must be a numpy array or a dict of numpy arrays.")
+#     print(f"Data saved to {basepath}")
+#     return None
+
+# def load(filename, folder="saved_results"):
+#     basepath = os.path.join(folder, filename)
+#     if filename.endswith(".npy"):
+#         data = numpy.load(basepath)
+#     elif filename.endswith(".npz"):
+#         data = numpy.load(basepath)
+#         data = {k: data[k] for k in data.files}
+#     else:
+#         raise ValueError("Filename must end with .npy or .npz")
+#     print(f"Data loaded from {basepath}")
+#     return data

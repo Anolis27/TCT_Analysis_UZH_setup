@@ -21,18 +21,17 @@ def main():
     #########################
 
     ####### AMPLITUDE ANALYSIS #######
-    # plot_amplitude(Paths.DATAFILE, Paths.POSITIONS)                # NOT WORKING
     # plot_amplitude_everything()                                      # WORKING
-    # plot_2d_amplitude(Paths.DATAFILE, Paths.POSITIONS)              # WORKING   but needs merge 1pdf
+    plot_2d_amplitude(Paths.DATAFILE, Paths.POSITIONS)              # WORKING   but needs merge 1pdf
     ##################################
 
     ####### CHARGE COLLECTION ANALYSIS #######
     # plot_collected_charge_everything()                              # WORKING
-    # plot_2d_charge(Paths.DATAFILE, Paths.POSITIONS)                 # WORKING   but needs merge 1pdf
+    plot_2d_charge(Paths.DATAFILE, Paths.POSITIONS)                 # WORKING   but needs merge 1pdf
     ##########################################
 
     ####### TIMING ANALYSIS #######
-    #plot_time_resolution_everything()                             # WORKING
+    # plot_time_resolution_everything()                             # WORKING
     plot_2d_timing(Paths.DATAFILE, Paths.POSITIONS)                # NOT WORKING   but needs merge 1pdf
     ###############################
 

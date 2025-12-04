@@ -404,10 +404,10 @@ def project_onto_y_two_channels(datafile, positions, channel1, channel2, sensor_
     time_over_90_data = data['Time over 90% (s)']
     sensor_strip_positions = list(set(sensor_strip_positions1 + sensor_strip_positions2))
     # for normalisation 
-    pad_positions = get_pad_positions(datafile, positions, channel1)
-    (ch1_norm, ch1_norm_err) = plot_amplitude_of_one_pad(datafile, channel1, pad_positions)
-    pad_positions = get_pad_positions(datafile, positions, channel2)
-    (ch2_norm, ch2_norm_err) = plot_amplitude_of_one_pad(datafile, channel2, pad_positions)
+    # pad_positions = get_pad_positions(datafile, positions, channel1)
+    # (ch1_norm, ch1_norm_err) = plot_amplitude_of_one_pad(datafile, channel1, pad_positions)
+    # pad_positions = get_pad_positions(datafile, positions, channel2)
+    # (ch2_norm, ch2_norm_err) = plot_amplitude_of_one_pad(datafile, channel2, pad_positions)
     for i in sensor_strip_positions:
         for j in range(n_triggers):
             amplitude1 = amplitude_data[i,j,1,channel1]
@@ -435,8 +435,9 @@ def project_onto_y_two_channels(datafile, positions, channel1, channel2, sensor_
 
             if y[i] not in amplitudes:
                 amplitudes[y[i]] = []
-            normalised_amplitude = amplitude1/ch1_norm + amplitude2/ch2_norm
-            amplitudes[y[i]].append(normalised_amplitude)
+            sum_amplitude = amplitude1 + amplitude2
+            amplitudes[y[i]].append(sum_amplitude)
+    
 
     for y_position in sorted(amplitudes):
         plt.clf()
@@ -461,6 +462,9 @@ def project_onto_y_two_channels(datafile, positions, channel1, channel2, sensor_
         # plt.title(f'{datafile[5:11]}, {datafile[12:16]}, Channel {channel1} + {channel2}, y: {y_position} ${{\mu}}$m, N: {len(hist)}')
         # fig = plt.gcf()
         # pdf.savefig(fig, dpi = 100)
+    
+    # normalisation of result
+    result['y axis'] = (result['y axis'] - min(result['y axis'])) / (max(result['y axis']) - min(result['y axis']))
     return result
 
 def project_onto_y_one_channel(datafile, positions, channel, sensor_strip_positions):

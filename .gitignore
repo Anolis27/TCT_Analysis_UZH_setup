@@ -20,6 +20,8 @@
 # BUT ignore its Data subfolder
 LGAD_ANALYSIS/Data/
 LGAD_ANALYSIS/Data/**
+LGAD_ANALYSIS/saved_results/
+LGAD_ANALYSIS/saved_results/**
 CASSIA_ANALYSIS/Data/
 CASSIA_ANALYSIS/Data/**
 

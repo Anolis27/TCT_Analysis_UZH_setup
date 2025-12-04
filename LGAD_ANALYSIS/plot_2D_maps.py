@@ -10,6 +10,7 @@ from scipy.optimize import curve_fit
 
 from config import Paths, Colors, Filters
 from data_manager import (
+    gaussian,
     query_dataset,
     get_positions,
     determine_active_channels
@@ -79,7 +80,7 @@ def compute_amplitude_and_charge(datafile, positions):
     return x, y, ampl, charge, active_ch1, active_ch2
 
 
-def plot_heatmap(x, y, z, title, unit, filename):
+def plot_heatmap(x, y, z, title, unit, filename, max_v= 0):
     plt.clf()
     fig, ax = plt.subplots(figsize=(10,10))
 
@@ -89,7 +90,7 @@ def plot_heatmap(x, y, z, title, unit, filename):
     )
 
     sns.heatmap(
-        heatmap, annot=False, cmap="plasma_r", vmax=0,
+        heatmap, annot=False, cmap="plasma_r", vmax=max_v,
         square=True, ax=ax, yticklabels=5, xticklabels=5,
         cbar_kws={"shrink": 0.5}
     )
@@ -115,11 +116,11 @@ def plot_2d_amplitude(datafile, positions):
 
     x, y, ampl, _, ch1, ch2 = compute_amplitude_and_charge(datafile, positions)
 
-    plot_heatmap(x, y, ampl[ch1], "Amplitude", "Amplitude [V]",
-                 f"Amps_{sensorname}_Ch{ch1}.pdf")
+    # plot_heatmap(x, y, ampl[ch1], "Amplitude", "Amplitude [V]",
+    #              f"Amps_{sensorname}_Ch{ch1}.pdf")
 
-    plot_heatmap(x, y, ampl[ch2], "Amplitude", "Amplitude [V]",
-                 f"Amps_{sensorname}_Ch{ch2}.pdf")
+    # plot_heatmap(x, y, ampl[ch2], "Amplitude", "Amplitude [V]",
+    #              f"Amps_{sensorname}_Ch{ch2}.pdf")
 
     plot_heatmap(x, y, ampl["sum"], "Amplitude Sum", "Amplitude [V]",
                  f"Amps_{sensorname}_Sum.pdf")
@@ -134,13 +135,14 @@ def plot_2d_charge(datafile, positions):
     base_dir = os.path.dirname(datafile)
     sensorname = get_sensorname_from_path(base_dir)
 
+
     x, y, _, charge, ch1, ch2 = compute_amplitude_and_charge(datafile, positions)
 
-    plot_heatmap(x, y, charge[ch1], "Collected Charge", "Charge [Vns]",
-                 f"Charge_{sensorname}_Ch{ch1}.pdf")
+    # plot_heatmap(x, y, charge[ch1], "Collected Charge", "Charge [Vns]",
+    #              f"Charge_{sensorname}_Ch{ch1}.pdf")
 
-    plot_heatmap(x, y, charge[ch2], "Collected Charge", "Charge [Vns]",
-                 f"Charge_{sensorname}_Ch{ch2}.pdf")
+    # plot_heatmap(x, y, charge[ch2], "Collected Charge", "Charge [Vns]",
+    #              f"Charge_{sensorname}_Ch{ch2}.pdf")
 
     plot_heatmap(x, y, charge["sum"], "Collected Charge Sum", "Charge [Vns]",
                  f"Charge_{sensorname}_Sum.pdf")
@@ -148,7 +150,7 @@ def plot_2d_charge(datafile, positions):
 
 
 def compute_timing(datafile, positions):
-    query_dataset(datafile)
+    n_position, n_triggers, n_channels = query_dataset(datafile)
     (x, y) = get_positions(positions)
     (ch1, ch2) = determine_active_channels(datafile)
 
@@ -167,31 +169,29 @@ def compute_timing(datafile, positions):
         )
         df.set_index(['n_position','n_trigger','n_pulse'], inplace=True)
 
-        amplitude = df['Amplitude (V)']
-        charge = df['Collected charge (V s)']
+        amplitude_data = df['Amplitude (V)']
+        charge_data = df['Collected charge (V s)']
         t50 = df['t_50 (s)']
-
-        n_position = len(np.unique(df.index.get_level_values('n_position')))
-        n_triggers = max(df.index.get_level_values('n_trigger')) + 1
 
         for i in range(n_position):
             time_diffs = []
             for j in range(n_triggers):
                 try:
-                    td = (t50[i,j,2] - t50[i,j,1]) * 1e9
-                except:
-                    continue
-                if math.isnan(td):
-                    continue
-
-                amp = amplitude[i,j,1]
-                if math.isnan(amp):
-                    continue
-
-                if td < 98 or td > 99.5:
-                    continue
-
-                time_diffs.append(td)
+                    time_diff = (t50[i,j,2] - t50[i,j,1]) * 1e9  # ns
+                    if math.isnan(time_diff):
+                        continue
+                    amplitude = amplitude_data[i,j,1]
+                    if math.isnan(amplitude):# or amplitude > -0.0:
+                        continue
+                    collected_charge = charge_data[i,j,1] * 1e9     
+                    if math.isnan(collected_charge):# or collected_charge > 0:
+                        continue
+    
+                    if time_diff < Filters.TIME_DIFF_MIN or time_diff > Filters.TIME_DIFF_MAX:
+                        continue
+                    time_diffs.append(time_diff)
+                except KeyError:
+                    continue  # some entries missing
 
             if len(time_diffs) < 10:
                 times[channel].append(np.nan)
@@ -200,16 +200,15 @@ def compute_timing(datafile, positions):
             mu = statistics.mean(time_diffs)
             std = statistics.stdev(time_diffs)
 
-            # Fit petite gaussienne
             counts, edges = np.histogram(
-                time_diffs, bins=40, range=(mu-4*std, mu+4*std), density=True
+                time_diffs, bins=50, range=(mu-4*std, mu+4*std), density=True
             )
             centers = 0.5*(edges[:-1]+edges[1:])
 
             try:
                 (mu_fit, sigma_fit), _ = curve_fit(
-                    lambda x, m, s: 1/(s*np.sqrt(2*np.pi))*np.exp(-(x-m)**2/(2*s**2)),
-                    centers, counts, p0=[mu, std]
+                    gaussian,
+                    centers, counts, p0=[mu, std], maxfev=10000
                 )
             except:
                 sigma_fit = np.nan
@@ -217,10 +216,20 @@ def compute_timing(datafile, positions):
             times[channel].append(sigma_fit)
 
     # combine ch1/ch2 : min resolution
-    times["sum"] = [
-        min(a,b) if not (math.isnan(a) or math.isnan(b)) else (a if not math.isnan(a) else b)
-        for a,b in zip(times[ch1], times[ch2])
-    ]
+    # times["sum"] = [
+    #     min(a,b) if not (math.isnan(a) or math.isnan(b)) else (a if not math.isnan(a) else b)
+    #     for a,b in zip(times[ch1], times[ch2])
+    # ]
+    times["sum"] = []
+    for t1, t2 in zip(times[ch1], times[ch2]):
+        if math.isnan(t1) and math.isnan(t2):
+            times["sum"].append(np.nan)
+        elif math.isnan(t1):
+            times["sum"].append(t2)
+        elif math.isnan(t2):
+            times["sum"].append(t1)
+        else:
+            times["sum"].append(min(t1, t2))
 
     return x, y, times, ch1, ch2
 
@@ -231,14 +240,15 @@ def plot_2d_timing(datafile, positions):
 
     base_dir = os.path.dirname(datafile)
     sensorname = get_sensorname_from_path(base_dir)
+    vmax = 0.1
 
     x, y, times, ch1, ch2 = compute_timing(datafile, positions)
 
-    plot_heatmap(x, y, times[ch1], "Time Resolution", "Time [ns]",
-                 f"TR_{sensorname}_Ch{ch1}.pdf")
+    # plot_heatmap(x, y, times[ch1], "Time Resolution", "Time [ns]",
+    #              f"TR_{sensorname}_Ch{ch1}.pdf", max_v=vmax)
 
-    plot_heatmap(x, y, times[ch2], "Time Resolution", "Time [ns]",
-                 f"TR_{sensorname}_Ch{ch2}.pdf")
+    # plot_heatmap(x, y, times[ch2], "Time Resolution", "Time [ns]",
+    #              f"TR_{sensorname}_Ch{ch2}.pdf", max_v=vmax)
 
     plot_heatmap(x, y, times["sum"], "Time Resolution (Best)", "Time [ns]",
-                 f"TR_{sensorname}_Sum.pdf")
+                 f"TR_{sensorname}_Sum.pdf", max_v=vmax)
