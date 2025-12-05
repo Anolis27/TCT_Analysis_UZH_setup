@@ -274,6 +274,7 @@ def plot_amplitude_everything(directory_in_str = "Data/"):
         plt.legend(loc = "best")
         fig = plt.gcf()
         pdf.savefig(fig, dpi = 100)
+        save_results(final_plot, analysis="Amplitude")
     return final_plot
 
 def plot_2D_separate(datafile, positions): 

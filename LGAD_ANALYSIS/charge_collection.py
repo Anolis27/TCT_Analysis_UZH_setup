@@ -184,4 +184,5 @@ def plot_collected_charge_everything(directory_in_str = "Data/"):
         plt.legend(loc = "best")
         fig = plt.gcf()
         pdf.savefig(fig, dpi = 100)
+        save_results(final_plot, analysis="Collected_charge")
     return None

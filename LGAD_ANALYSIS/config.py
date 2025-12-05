@@ -2,10 +2,11 @@
 import os
 
 class Paths:
-    BASE_DIR = os.path.expanduser("C:/Users/mathi/Documents/UZH/LGAD_ANALYSIS/Data/V2_TW2/90V")
+    BASE_DIR = os.path.expanduser("C:/Users/mathi/Documents/UZH/LGAD_ANALYSIS/Data/S2_V2_TW5/50V")
     DATAFILE = os.path.join(BASE_DIR, "parsed_from_waveforms.sqlite")
     DATAFILE2 = os.path.join(BASE_DIR, "measured_data.sqlite")
     POSITIONS = os.path.join(BASE_DIR, "positions.pickle")
+    SAVE_DIR = "saved_results"
 
 class Colors:
     CB_CYCLE = [
@@ -41,3 +42,4 @@ class InterpadConfig:
     INTERPAD_REGION_MIN = -75  # um
     INTERPAD_REGION_MAX = 75    # um
     INTERPAD_FRACTION = 0.9     # fraction of the sigmoid used for interpad distance calculation
+    INTERPAD_TIMING_SCALE = (0.01, 0.085)  # y-axis limits for interpad timing plots (ns)

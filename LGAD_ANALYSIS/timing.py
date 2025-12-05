@@ -184,6 +184,7 @@ def plot_time_resolution_everything(directory_in_str = "Data/"):
         plt.legend(loc = "best")
         fig = plt.gcf()
         pdf.savefig(fig, dpi = 100)
+        save_results(final_plot, analysis="Timing")
     return None
 
 def plot_time_difference_histogram(datafile, positions, y_position, pdf):

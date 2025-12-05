@@ -323,7 +323,7 @@ def plot_sensor_strip_positions(datafile, positions):
             xs1 = [x[i] for i in sensor_pos_ch1]
             ys1 = [y[i] for i in sensor_pos_ch1]
             ax.scatter(
-                xs1, ys1, s=30, color=Filters.CB_CYCLE[0],
+                xs1, ys1, s=30, color=Colors.CB_CYCLE[0],
                 edgecolor='k', label=f"Ch {active_ch1}", zorder=3
             )
 
@@ -332,7 +332,7 @@ def plot_sensor_strip_positions(datafile, positions):
             xs2 = [x[i] for i in sensor_pos_ch2]
             ys2 = [y[i] for i in sensor_pos_ch2]
             ax.scatter(
-                xs2, ys2, s=30, color=Filters.CB_CYCLE[1],
+                xs2, ys2, s=30, color=Colors.CB_CYCLE[1],
                 edgecolor='k', label=f"Ch {active_ch2}", zorder=4
             )
 
@@ -356,36 +356,70 @@ def plot_sensor_strip_positions(datafile, positions):
 
     return None
 
-# def save(filename, data, folder="saved_results"):
-#     # make sure the folder exists
-#     os.makedirs(folder, exist_ok=True)
-#     basepath = os.path.join(folder, filename)
+import os
+import pickle
 
-#     if isinstance(data, numpy.ndarray):
-#         # Save array → .npy
-#         numpy.save(basepath + ".npy", data)
+SAVE_DIR = "save_results"
 
-#     elif isinstance(data, dict):
-#         # Check that each value is indeed an array
-#         for k, v in data.items():
-#             if not isinstance(v, numpy.ndarray):
-#                 raise TypeError(f"The key '{k}' does not contain a numpy array.")
-        
-#         # Save dict → .npz
-#         numpy.savez(basepath + ".npz", **data)
-#     else:
-#         raise TypeError("Data must be a numpy array or a dict of numpy arrays.")
-#     print(f"Data saved to {basepath}")
-#     return None
 
-# def load(filename, folder="saved_results"):
-#     basepath = os.path.join(folder, filename)
-#     if filename.endswith(".npy"):
-#         data = numpy.load(basepath)
-#     elif filename.endswith(".npz"):
-#         data = numpy.load(basepath)
-#         data = {k: data[k] for k in data.files}
-#     else:
-#         raise ValueError("Filename must end with .npy or .npz")
-#     print(f"Data loaded from {basepath}")
-#     return data
+def detect_type(data):
+
+    if isinstance(data, dict):
+        # Amplitude, charge, timing
+        return "dict"
+    elif isinstance(data, tuple) and len(data) == 3:
+        # Timing interpad
+        return "tuple_3"
+    elif isinstance(data, tuple) and len(data) == 4:
+        # Interpad distance
+        return "tuple_4"
+    else:
+        raise ValueError("Type of data not recognized.")
+
+
+def save_results(results_dict, analysis="NULL"):
+    # Base directory: saved_results/<analysis>/
+    if analysis != "NULL":
+        base_dir = os.path.join(Paths.SAVE_DIR, analysis)
+    else:
+        base_dir = Paths.SAVE_DIR
+
+    os.makedirs(base_dir, exist_ok=True)
+
+    for filename, data in results_dict.items():
+        data_type = detect_type(data)
+
+        # ============================================================
+        # SPECIAL CASE for Timing_interpad_region:
+        # data = { "50V": {...}, "80V": {...}, ... }
+        # We must save each voltage separately.
+        # ============================================================
+        if analysis == "Timing_interpad_region" and isinstance(data, dict):
+            # first layer directory = sensor name
+            sensor_dir = os.path.join(base_dir, filename)
+            os.makedirs(sensor_dir, exist_ok=True)
+
+            for voltage, vdata in data.items():
+                vtype = detect_type(vdata)
+                save_path = os.path.join(sensor_dir, f"{voltage}.pkl")
+
+                with open(save_path, "wb") as f:
+                    pickle.dump({"type": vtype, "data": vdata}, f)
+
+                print(f"[OK] Saved: {save_path}")
+
+        else:
+            save_path = os.path.join(base_dir, f"{filename}.pkl")
+
+            with open(save_path, "wb") as f:
+                pickle.dump({"type": data_type, "data": data}, f)
+
+            print(f"[OK] Saved: {save_path}")
+
+
+
+def load_results(filepath):
+    with open(filepath, "rb") as f:
+        packed = pickle.load(f)
+
+    return packed["type"], packed["data"]

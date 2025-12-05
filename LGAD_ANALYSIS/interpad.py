@@ -23,8 +23,8 @@ def get_interpad_distance(datafile, positions, channel1, sensor_strip_positions1
 
     channel1_result = project_onto_y_one_channel(datafile, positions, channel1, sensor_strip_positions1)
     channel2_result = project_onto_y_one_channel(datafile, positions, channel2, sensor_strip_positions2)
-    both_channels   = project_onto_y_two_channels(datafile, positions, channel1, channel2,
-                                                  sensor_strip_positions1, sensor_strip_positions2, pdf)
+    # both_channels   = project_onto_y_two_channels(datafile, positions, channel1, channel2,
+    #                                               sensor_strip_positions1, sensor_strip_positions2, pdf)
     plt.clf()
 
     # ============================
@@ -134,12 +134,12 @@ def get_interpad_distance(datafile, positions, channel1, sensor_strip_positions1
     # ============================
     # Sum of channels (no fit)
     # ============================
-    plt.plot(both_channels["x axis"], both_channels["y axis"], ".-",
-             markersize=3, linewidth=1, color=Colors.CB_CYCLE[3],
-             label=f"Ch {channel1}+{channel2} Data")
-    plt.errorbar(both_channels["x axis"], both_channels["y axis"],
-                 yerr=both_channels["y error"], ls="none",
-                 ecolor="k", elinewidth=1, capsize=2)
+    # plt.plot(both_channels["x axis"], both_channels["y axis"], ".-",
+    #          markersize=3, linewidth=1, color=Colors.CB_CYCLE[3],
+    #          label=f"Ch {channel1}+{channel2} Data")
+    # plt.errorbar(both_channels["x axis"], both_channels["y axis"],
+    #              yerr=both_channels["y error"], ls="none",
+    #              ecolor="k", elinewidth=1, capsize=2)
 
     # ============================
     # Plot settings
@@ -243,6 +243,7 @@ def plot_interpad_distance_against_bias_voltage_v2(directory_in_str = "Data/"):
         fig = plt.gcf() # get current figure
         pdf.savefig(fig, dpi = 100)
     plt.show()
+    save_results(result, "Interpad_distance")
     return None
 
 def plot_time_resolution_interpad_region(datafile, positions, pdf):
@@ -350,7 +351,9 @@ def plot_time_resolution_interpad_region_everything(directory_in_str = "Data/"):
                 data_file       = f"{directory3_in_str}parsed_from_waveforms.sqlite"
                 positions_file  = f"{directory3_in_str}positions.pickle"
                 print(f"Current Sensor: {filename} | Voltage: {filename2}")
-                final_plot[filename2] = plot_time_resolution_interpad_region(data_file, positions_file, pdf)
+                if filename not in final_plot:
+                    final_plot[filename] = {}
+                final_plot[filename][filename2] = plot_time_resolution_interpad_region(data_file, positions_file, pdf)
             plt.clf()
             plt.title(f"Time Resolution in Interpad Region vs bias Voltage, {filename}")
             plt.xlabel(r"x Position ($\mu$m)")
@@ -358,14 +361,14 @@ def plot_time_resolution_interpad_region_everything(directory_in_str = "Data/"):
             plt.gca().invert_xaxis()
             plt.tight_layout()
             colors_index = 0
-            for key in final_plot:
-                x_ax = final_plot[key]["x axis"]
-                y_ax = final_plot[key]["y axis"]
-                y_ax_err = final_plot[key]["y error"]
+            for key in final_plot[filename]:
+                x_ax = final_plot[filename][key]["x axis"]
+                y_ax = final_plot[filename][key]["y axis"]
+                y_ax_err = final_plot[filename][key]["y error"]
                 plt.plot(x_ax, y_ax, 'o-', label=f"{key}", markersize=3, color=Colors.CB_CYCLE[colors_index], linewidth=1)
                 plt.errorbar(x_ax, y_ax, yerr = y_ax_err, ls='none', ecolor = 'k', elinewidth = 1, capsize = 2)
                 colors_index += 1
-            plt.ylim(bottom=0.015, top=0.09) # ajust scale
+            plt.ylim(bottom=InterpadConfig.INTERPAD_TIMING_SCALE[0], top=InterpadConfig.INTERPAD_TIMING_SCALE[1]) # ajust scale
             #plt.legend(loc='upper right', ncol = 1)
             plt.legend(loc='best', ncol = 1)
             # plt.legend(
@@ -376,4 +379,5 @@ def plot_time_resolution_interpad_region_everything(directory_in_str = "Data/"):
             # plt.tight_layout()
             fig = plt.gcf() # get current figure
             pdf.savefig(fig, dpi = 100, bbox_inches='tight')
+        save_results(final_plot, "Timing_interpad_region")
     return None
