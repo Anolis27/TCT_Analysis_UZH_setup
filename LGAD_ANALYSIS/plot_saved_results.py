@@ -15,7 +15,7 @@ def plot_saved_results(analysis):
     # CASE 1 : ANALYSES Amplitude, Charge, Timing
     # ============================================================
     if analysis in ("Amplitude", "Collected_charge", "Timing"):
-        plt.clf()
+        plt.close()
         plt.figure(figsize=(8,6))
         linestyle_counter = 0
         color_counter = 0
@@ -60,7 +60,7 @@ def plot_saved_results(analysis):
         plt.legend(fontsize=8)
         plt.tight_layout()
         plt.savefig(f"{analysis}_saved_results.pdf", format='pdf', dpi=1200)
-        plt.show()
+        #plt.show()
         return
     
 
@@ -77,7 +77,7 @@ def plot_saved_results(analysis):
                 if not os.path.isdir(sensor_dir):
                     continue
 
-                plt.clf()
+                plt.close()
                 plt.figure(figsize=(8,6))
                 color_index = 0
 
@@ -129,7 +129,7 @@ def plot_saved_results(analysis):
     if analysis == "Interpad_distance":
         pdf_path = f"{analysis}_saved_results.pdf"
         with PdfPages(pdf_path) as pdf:
-            plt.clf()
+            plt.close()
             plt.figure(figsize=(8,6))
             color_counter = 0
 

@@ -204,7 +204,7 @@ def plot_amplitude_everything(directory_in_str = "Data/"):
                 if filename2.startswith('.'): #      # to ignore any hidden file
                     continue                
                 directory3_in_str = f"{directory2_in_str}{filename2}/"
-                if filename2 in ("50V","70V","80V","90V","100V","110V","120V","130V"):
+                if filename2 in ("50V","70V","80V","90V","100V","110V","120V","130V", "140V", "150V", "160V", "170V", "180V", "190V"):
                     data_file       = f"{directory3_in_str}parsed_from_waveforms.sqlite"
                     positions_file  = f"{directory3_in_str}positions.pickle"
                     (chan1, chan2) = determine_active_channels(data_file)

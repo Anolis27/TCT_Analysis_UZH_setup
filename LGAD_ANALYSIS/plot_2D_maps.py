@@ -7,6 +7,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.optimize import curve_fit
+from matplotlib.backends.backend_pdf import PdfPages
 
 from config import Paths, Colors, Filters
 from data_manager import (
@@ -80,7 +81,7 @@ def compute_amplitude_and_charge(datafile, positions):
     return x, y, ampl, charge, active_ch1, active_ch2
 
 
-def plot_heatmap(x, y, z, title, unit, filename, max_v= 0):
+def plot_heatmap(x, y, z, pdf, unit, title, max_v= 0):
     plt.clf()
     fig, ax = plt.subplots(figsize=(10,10))
 
@@ -96,13 +97,14 @@ def plot_heatmap(x, y, z, title, unit, filename, max_v= 0):
     )
 
     plt.tick_params(axis='both', which='major', labelsize=17)
+    plt.title(title, fontsize=20)
     plt.xlabel(r"x ($\mu$m)", fontsize=18)
     plt.ylabel(r"y ($\mu$m)", fontsize=18)
     cbar = ax.collections[0].colorbar
     cbar.set_label(unit, fontsize=18)
 
     plt.tight_layout()
-    plt.savefig(f"{filename}", format='pdf', dpi=1200)
+    pdf.savefig(fig)
 
 
 
@@ -115,16 +117,16 @@ def plot_2d_amplitude(datafile, positions):
     sensorname = get_sensorname_from_path(base_dir)
 
     x, y, ampl, _, ch1, ch2 = compute_amplitude_and_charge(datafile, positions)
+    with PdfPages(f"2d_amps_{sensorname}.pdf") as pdf:
+        plot_heatmap(x, y, ampl[ch1], pdf, "Amplitude [V]",
+                    f"{sensorname} Ch{ch1}")
 
-    # plot_heatmap(x, y, ampl[ch1], "Amplitude", "Amplitude [V]",
-    #              f"Amps_{sensorname}_Ch{ch1}.pdf")
+        plot_heatmap(x, y, ampl[ch2], pdf, "Amplitude [V]",
+                    f"{sensorname} Ch{ch2}")
 
-    # plot_heatmap(x, y, ampl[ch2], "Amplitude", "Amplitude [V]",
-    #              f"Amps_{sensorname}_Ch{ch2}.pdf")
-
-    plot_heatmap(x, y, ampl["sum"], "Amplitude Sum", "Amplitude [V]",
-                 f"Amps_{sensorname}_Sum.pdf")
-
+        plot_heatmap(x, y, ampl["sum"], pdf, "Amplitude [V]",
+                    f"{sensorname} Ch{ch1}&{ch2}")
+        pdf.close()
 
 
 # ============================================================
@@ -138,15 +140,16 @@ def plot_2d_charge(datafile, positions):
 
     x, y, _, charge, ch1, ch2 = compute_amplitude_and_charge(datafile, positions)
 
-    # plot_heatmap(x, y, charge[ch1], "Collected Charge", "Charge [Vns]",
-    #              f"Charge_{sensorname}_Ch{ch1}.pdf")
+    with PdfPages(f"2d_charge_{sensorname}.pdf") as pdf:
+        plot_heatmap(x, y, charge[ch1], pdf, "Collected charge [Vns]",
+                     f"{sensorname} Ch{ch1}")
 
-    # plot_heatmap(x, y, charge[ch2], "Collected Charge", "Charge [Vns]",
-    #              f"Charge_{sensorname}_Ch{ch2}.pdf")
+        plot_heatmap(x, y, charge[ch2], pdf, "Collected charge [Vns]",
+                     f"{sensorname} Ch{ch2}")
 
-    plot_heatmap(x, y, charge["sum"], "Collected Charge Sum", "Charge [Vns]",
-                 f"Charge_{sensorname}_Sum.pdf")
-
+        plot_heatmap(x, y, charge["sum"], pdf, "Collected charge [Vns]",
+                     f"{sensorname} Ch{ch1}&{ch2}")
+        pdf.close()
 
 
 def compute_timing(datafile, positions):
@@ -243,12 +246,14 @@ def plot_2d_timing(datafile, positions):
     vmax = 0.1
 
     x, y, times, ch1, ch2 = compute_timing(datafile, positions)
+    
+    with PdfPages(f"2d_timing_{sensorname}.pdf") as pdf:
+        plot_heatmap(x, y, times[ch1], pdf, "Time [ns]",
+                    f"{sensorname} Ch{ch1}", max_v=vmax)
 
-    # plot_heatmap(x, y, times[ch1], "Time Resolution", "Time [ns]",
-    #              f"TR_{sensorname}_Ch{ch1}.pdf", max_v=vmax)
+        plot_heatmap(x, y, times[ch2], pdf, "Time [ns]",
+                    f"{sensorname} Ch{ch2}", max_v=vmax)
 
-    # plot_heatmap(x, y, times[ch2], "Time Resolution", "Time [ns]",
-    #              f"TR_{sensorname}_Ch{ch2}.pdf", max_v=vmax)
-
-    plot_heatmap(x, y, times["sum"], "Time Resolution (Best)", "Time [ns]",
-                 f"TR_{sensorname}_Sum.pdf", max_v=vmax)
+        plot_heatmap(x, y, times["sum"], pdf, "Time resolution [ns]",
+                    f"{sensorname} Ch{ch1}&{ch2}", max_v=vmax)
+        pdf.close()

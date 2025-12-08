@@ -2,7 +2,7 @@
 import os
 
 class Paths:
-    BASE_DIR = os.path.expanduser("C:/Users/mathi/Documents/UZH/LGAD_ANALYSIS/Data/S2_V2_TW5/50V")
+    BASE_DIR = os.path.expanduser("C:/Users/mathi/Documents/UZH/LGAD_ANALYSIS/Data/W9_V2_TW1/190V")
     DATAFILE = os.path.join(BASE_DIR, "parsed_from_waveforms.sqlite")
     DATAFILE2 = os.path.join(BASE_DIR, "measured_data.sqlite")
     POSITIONS = os.path.join(BASE_DIR, "positions.pickle")
@@ -27,7 +27,7 @@ class Colors:
     ]
 
 class Filters:  # key values for Ti-LGAD
-    AMPLITUDE_THRESHOLD = -0.07  # V    -0.07
+    AMPLITUDE_THRESHOLD = -0.05  # V    -0.07
     TIME_DIFF_MIN = 98      # ns    98
     TIME_DIFF_MAX = 99.5     # ns   99.5
     PEAK_TIME_MIN = 4.5     # ns    4.5
@@ -43,3 +43,4 @@ class InterpadConfig:
     INTERPAD_REGION_MAX = 75    # um
     INTERPAD_FRACTION = 0.9     # fraction of the sigmoid used for interpad distance calculation
     INTERPAD_TIMING_SCALE = (0.01, 0.085)  # y-axis limits for interpad timing plots (ns)
+    POINTS_FROM_EDGE_STRIP_POSITION = 2  # number of points from edge not to consider (usually 2)

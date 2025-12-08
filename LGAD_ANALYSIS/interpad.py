@@ -144,7 +144,7 @@ def get_interpad_distance(datafile, positions, channel1, sensor_strip_positions1
     # ============================
     # Plot settings
     # ============================
-    plt.title(f"{datafile[5:11]}, {datafile[12:16]}")
+    plt.title(f"{datafile}")# , {datafile[12:16]}")
     plt.gca().invert_xaxis()
     plt.xlabel(r"x ($\mu$m)")
     plt.ylabel("Amplitude (V)")

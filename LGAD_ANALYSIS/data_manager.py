@@ -1,5 +1,5 @@
 # data_manager.py
-from config import Paths, Colors, Filters
+from config import Paths, Colors, Filters, InterpadConfig
 from scipy import stats
 from scipy.optimize import curve_fit
 import os
@@ -216,6 +216,112 @@ def plot_pad_positions(datafile, positions):
     plt.show()
     return None
 
+def plot_pad_position_everything(directory_in_str="Data/"):
+    """
+    Creates a PDF:
+      - One section per sensor
+      - One page per voltage
+      - Each page contains: pad positions Ch1+Ch2, Ch1 only, Ch2 only
+      - Last page contains filter values
+    """
+
+    pdf_name = "pad_positions_everything.pdf"
+    with PdfPages(pdf_name) as pdf:
+
+        # Loop over sensors
+        for sensor in sorted(os.listdir(directory_in_str)):
+            if sensor.startswith("."):
+                continue
+
+            sensor_dir = os.path.join(directory_in_str, sensor)
+            if not os.path.isdir(sensor_dir):
+                continue
+
+            print(f"\nProcessing sensor: {sensor}")
+
+            # Loop over voltages
+            voltages = sorted(
+                [v for v in os.listdir(sensor_dir) if not v.startswith(".")],
+                key=lambda x: int(x.rstrip("V"))
+            )
+
+            for voltage in voltages:
+                voltage_dir = os.path.join(sensor_dir, voltage)
+
+                data_file = os.path.join(voltage_dir, "parsed_from_waveforms.sqlite")
+                positions_file = os.path.join(voltage_dir, "positions.pickle")
+
+                print(f"  Voltage: {voltage}")
+
+                # Read data for this sensor/voltage
+                (ch1, ch2) = determine_active_channels(data_file)
+                pad1 = get_pad_positions(data_file, positions_file, ch1)
+                pad2 = get_pad_positions(data_file, positions_file, ch2)
+                x, y = get_positions(positions_file)
+
+                # =============================================
+                # MAKE THE PAGE WITH 3 SUBPLOTS
+                # =============================================
+                fig, axes = plt.subplots(1, 3, figsize=(16, 5))
+                titles = [
+                    f"{sensor} - {voltage}\nCh {ch1}+{ch2}",
+                    f"{sensor} - {voltage}\nCh {ch1} only",
+                    f"{sensor} - {voltage}\nCh {ch2} only",
+                ]
+
+                for ax, show_ch1, show_ch2, title in zip(
+                        axes,
+                        [True, True, False],
+                        [True, False, True],
+                        titles):
+                    
+                    ax.scatter(x, y, s=4, color="lightgrey", label="All Positions")
+
+                    # CH1
+                    if show_ch1 and pad1:
+                        xs1 = [x[i] for i in pad1]; ys1 = [y[i] for i in pad1]
+                        ax.scatter(xs1, ys1, s=30, color=Colors.CB_CYCLE[0],
+                                   edgecolor="k", label=f"Ch {ch1}")
+
+                    # CH2
+                    if show_ch2 and pad2:
+                        xs2 = [x[i] for i in pad2]; ys2 = [y[i] for i in pad2]
+                        ax.scatter(xs2, ys2, s=30, color=Colors.CB_CYCLE[1],
+                                   edgecolor="k", label=f"Ch {ch2}")
+
+                    ax.set_title(title)
+                    ax.set_xlabel("x (µm)")
+                    ax.set_ylabel("y (µm)")
+                    ax.set_aspect("equal", "box")
+                    ax.legend(loc="best", fontsize="small")
+
+                plt.tight_layout()
+                pdf.savefig(fig, dpi=120)
+                plt.close(fig)
+
+        # ==============================================================
+        # LAST PAGE : FILTER VALUES
+        # ==============================================================
+        fig = plt.figure(figsize=(8, 5))
+        plt.title("Filter Values Used (from config.Filters)", fontsize=14)
+
+        text = (
+            f"AMPLITUDE_THRESHOLD = {Filters.AMPLITUDE_THRESHOLD}\n"
+            f"TIME_DIFF_MIN       = {Filters.TIME_DIFF_MIN} ns\n"
+            f"TIME_DIFF_MAX       = {Filters.TIME_DIFF_MAX} ns\n"
+            f"PEAK_TIME_MIN       = {Filters.PEAK_TIME_MIN} ns\n"
+            f"PEAK_TIME_MAX       = {Filters.PEAK_TIME_MAX} ns\n"
+        )
+
+        plt.text(0.1, 0.5, text, fontsize=14, family="monospace")
+        plt.axis("off")
+
+        pdf.savefig(fig, dpi=120)
+        plt.close(fig)
+
+    print(f"\n[OK] PDF saved as: {pdf_name}")
+    return None
+
 def get_sensor_strip_positions(datafile, positions, channel):
     n_position, n_triggers, n_channels = query_dataset(datafile)
     (x,y) = get_positions(positions)
@@ -250,7 +356,7 @@ def get_sensor_strip_positions(datafile, positions, channel):
     # select only intersting region
     data_frame = data_frame[(data_frame["x"] >= -50) & (data_frame["x"] <= 50) & (data_frame["y"] >= -50) & (data_frame["y"] <= 50)]
 
-    points_from_edge = 2 # this is hardcoded number
+    points_from_edge = InterpadConfig.POINTS_FROM_EDGE_STRIP_POSITION # this is hardcoded number
     smallest_list = (pandas.Series(data_frame['y'].unique()).nsmallest(points_from_edge)).to_list()
     largest_list = (pandas.Series(data_frame['y'].unique()).nlargest(points_from_edge)).to_list()
     bins_in_y = len((pandas.Series(data_frame['y'].unique())).to_list())
