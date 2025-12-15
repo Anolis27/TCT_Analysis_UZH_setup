@@ -250,7 +250,7 @@ def plot_time_resolution_interpad_region(datafile, positions, pdf):
     (chan1, chan2) = determine_active_channels(datafile)
     n_position, n_triggers, n_channels = query_dataset(datafile)
     (x,y) = get_positions(positions)
-    time_differences = {} # {y position: [list of time differences]}
+    time_differences = {chan1: {}, chan2: {}} # {y position: [list of time differences]}
     connection = sqlite3.connect(datafile)
     data = pandas.read_sql(f"SELECT n_position,n_trigger,n_channel,n_pulse, `t_90 (s)`, `Time over 90% (s)`,`Amplitude (V)`, `t_50 (s)` FROM dataframe_table", connection)
     data.set_index(['n_position','n_trigger','n_pulse','n_channel'], inplace=True)
@@ -259,7 +259,9 @@ def plot_time_resolution_interpad_region(datafile, positions, pdf):
     t_90_data = data["t_90 (s)"]
     time_over_90_data = data['Time over 90% (s)']
 
+    
     for i in range(n_position):
+
         for j in range(n_triggers):
             for channel in (chan1, chan2):
                 amplitude = amplitude_data[i,j,1,channel]
