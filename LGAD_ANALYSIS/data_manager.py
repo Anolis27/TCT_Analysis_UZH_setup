@@ -354,7 +354,7 @@ def get_sensor_strip_positions(datafile, positions, channel):
     data_frame = pandas.DataFrame({'x': x, 'y': y, 'z': amplitudes})
 
     # select only intersting region
-    data_frame = data_frame[(data_frame["x"] >= -50) & (data_frame["x"] <= 50) & (data_frame["y"] >= -50) & (data_frame["y"] <= 50)]
+    data_frame = data_frame[(data_frame["x"] >= InterpadConfig.INTERPAD_REGION_MIN) & (data_frame["x"] <= InterpadConfig.INTERPAD_REGION_MAX) & (data_frame["y"] >= InterpadConfig.INTERPAD_REGION_MIN) & (data_frame["y"] <= InterpadConfig.INTERPAD_REGION_MAX)]
 
     points_from_edge = InterpadConfig.POINTS_FROM_EDGE_STRIP_POSITION # this is hardcoded number
     smallest_list = (pandas.Series(data_frame['y'].unique()).nsmallest(points_from_edge)).to_list()
@@ -462,11 +462,6 @@ def plot_sensor_strip_positions(datafile, positions):
 
     return None
 
-import os
-import pickle
-
-SAVE_DIR = "save_results"
-
 
 def detect_type(data):
 
@@ -529,3 +524,55 @@ def load_results(filepath):
         packed = pickle.load(f)
 
     return packed["type"], packed["data"]
+
+
+def merge_saved_results(pkl_path_1, pkl_path_2, output_path):
+    """
+    Merge two saved_results pickle files into a single pickle.
+    - pkl_path_1 : first pickle file
+    - pkl_path_2 : second pickle file
+    - output_path : where to save the merged pickle
+    """
+
+    # ---- load first file ----
+    with open(pkl_path_1, "rb") as f:
+        packed1 = pickle.load(f)
+    type1 = packed1["type"]
+    data1 = packed1["data"]
+
+    # ---- load second file ----
+    with open(pkl_path_2, "rb") as f:
+        packed2 = pickle.load(f)
+    type2 = packed2["type"]
+    data2 = packed2["data"]
+
+    # ---- safety check ----
+    if type1 != type2:
+        raise ValueError(
+            f"Cannot merge: type mismatch ({type1} vs {type2})"
+        )
+
+    # ---- merge depending on type ----
+    if isinstance(data1, dict) and isinstance(data2, dict):
+        merged = data1.copy()
+        for key, val in data2.items():
+            if key not in merged:
+                merged[key] = val
+            else:
+                # If both files contain the same sensor/voltage/etc.
+                # data2 overrides data1
+                merged[key] = val
+    else:
+        raise ValueError(
+            "Merge only supported for dict-based data (Amplitude, Charge, Timing, Interpad, Timing_interpad_region)"
+        )
+
+    # ---- save merged pkl ----
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+    with open(output_path, "wb") as f:
+        pickle.dump({"type": type1, "data": merged}, f)
+
+    print(f"[OK] Merged file saved to: {output_path}")
+
+    return output_path

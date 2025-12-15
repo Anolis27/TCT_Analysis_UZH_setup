@@ -105,6 +105,7 @@ def plot_heatmap(x, y, z, pdf, unit, title, max_v= 0):
 
     plt.tight_layout()
     pdf.savefig(fig)
+    plt.close()
 
 
 
@@ -118,6 +119,7 @@ def plot_2d_amplitude(datafile, positions):
 
     x, y, ampl, _, ch1, ch2 = compute_amplitude_and_charge(datafile, positions)
     with PdfPages(f"2d_amps_{sensorname}.pdf") as pdf:
+        
         plot_heatmap(x, y, ampl[ch1], pdf, "Amplitude [V]",
                     f"{sensorname} Ch{ch1}")
 
@@ -127,6 +129,40 @@ def plot_2d_amplitude(datafile, positions):
         plot_heatmap(x, y, ampl["sum"], pdf, "Amplitude [V]",
                     f"{sensorname} Ch{ch1}&{ch2}")
         pdf.close()
+
+def plot_2d_amplitude_charge_everything(dir_in_str = "Data/"):
+    pdf_name = "2d_amplitudes_charge_all_sensors.pdf"
+    with PdfPages(pdf_name) as pdf:
+        for sensor_folder in os.listdir(dir_in_str):
+            base_dir = os.path.join(dir_in_str, sensor_folder)
+            for voltage_folder in sorted(os.listdir(base_dir), key=lambda x: int(x.rstrip("V"))):
+                base_dir_voltage = os.path.join(base_dir, voltage_folder)
+                if not os.path.isdir(base_dir_voltage):
+                    continue
+                datafile = os.path.join(base_dir_voltage, "parsed_from_waveforms.sqlite")
+                positions = os.path.join(base_dir_voltage, "positions.pickle")
+
+                if not os.path.isfile(datafile) or not os.path.isfile(positions):
+                    continue
+
+
+                x, y, ampl, charge, ch1, ch2 = compute_amplitude_and_charge(datafile, positions)
+
+                plot_heatmap(x, y, ampl[ch1], pdf, "Amplitude [V]",
+                            f"{sensor_folder}, {voltage_folder} Ch{ch1}")
+
+                plot_heatmap(x, y, ampl[ch2], pdf, "Amplitude [V]",
+                            f"{sensor_folder}, {voltage_folder} Ch{ch2}")
+
+                plot_heatmap(x, y, ampl["sum"], pdf, "Amplitude [V]",
+                            f"{sensor_folder}, {voltage_folder} Ch{ch1}&{ch2}")
+                
+                plot_heatmap(x, y, charge[ch1], pdf, "Collected charge [V s]",
+                            f"{sensor_folder}, {voltage_folder} Ch{ch1}")
+                plot_heatmap(x, y, charge[ch2], pdf, "Collected charge [V s]",
+                            f"{sensor_folder}, {voltage_folder} Ch{ch2}")
+                plot_heatmap(x, y, charge["sum"], pdf, "Collected charge [V s]",
+                            f"{sensor_folder}, {voltage_folder} Ch{ch1}&{ch2}")
 
 
 # ============================================================
@@ -141,13 +177,13 @@ def plot_2d_charge(datafile, positions):
     x, y, _, charge, ch1, ch2 = compute_amplitude_and_charge(datafile, positions)
 
     with PdfPages(f"2d_charge_{sensorname}.pdf") as pdf:
-        plot_heatmap(x, y, charge[ch1], pdf, "Collected charge [Vns]",
+        plot_heatmap(x, y, charge[ch1], pdf, "Collected charge [V s]",
                      f"{sensorname} Ch{ch1}")
 
-        plot_heatmap(x, y, charge[ch2], pdf, "Collected charge [Vns]",
+        plot_heatmap(x, y, charge[ch2], pdf, "Collected charge [V s]",
                      f"{sensorname} Ch{ch2}")
 
-        plot_heatmap(x, y, charge["sum"], pdf, "Collected charge [Vns]",
+        plot_heatmap(x, y, charge["sum"], pdf, "Collected charge [V s]",
                      f"{sensorname} Ch{ch1}&{ch2}")
         pdf.close()
 
@@ -257,3 +293,31 @@ def plot_2d_timing(datafile, positions):
         plot_heatmap(x, y, times["sum"], pdf, "Time resolution [ns]",
                     f"{sensorname} Ch{ch1}&{ch2}", max_v=vmax)
         pdf.close()
+
+def plot_2d_timing_everything(dir_in_str = "Data/"):
+    pdf_name = "2d_timing_all_sensors.pdf"
+    vmax = 0.1
+    with PdfPages(pdf_name) as pdf:
+        for sensor_folder in os.listdir(dir_in_str):
+            base_dir = os.path.join(dir_in_str, sensor_folder)
+            for voltage_folder in sorted(os.listdir(base_dir), key=lambda x: int(x.rstrip("V"))):
+                base_dir_voltage = os.path.join(base_dir, voltage_folder)
+                if not os.path.isdir(base_dir_voltage):
+                    continue
+                datafile = os.path.join(base_dir_voltage, "parsed_from_waveforms.sqlite")
+                positions = os.path.join(base_dir_voltage, "positions.pickle")
+
+                if not os.path.isfile(datafile) or not os.path.isfile(positions):
+                    continue
+
+
+                x, y, times, ch1, ch2 = compute_timing(datafile, positions)
+
+                plot_heatmap(x, y, times[ch1], pdf, "Time [ns]",
+                            f"{sensor_folder}, {voltage_folder} Ch{ch1}", max_v=vmax)
+
+                plot_heatmap(x, y, times[ch2], pdf, "Time [ns]",
+                            f"{sensor_folder}, {voltage_folder} Ch{ch2}", max_v=vmax)
+
+                plot_heatmap(x, y, times["sum"], pdf, "Time resolution [ns]",
+                            f"{sensor_folder}, {voltage_folder} Ch{ch1}&{ch2}", max_v=vmax)

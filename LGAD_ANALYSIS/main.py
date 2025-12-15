@@ -13,6 +13,7 @@ import time
 
 def main():
     print(f"Script started")
+    Paths.resolve() # If BASEDIR is not found, it is resolved automatically
     start_time = time.time()
 
     ####### DEBUGGING #######
@@ -27,6 +28,7 @@ def main():
     #plot_amplitude_everything()                                      # WORKING
     #plot_saved_results("Amplitude")                                   # WORKING
     #plot_2d_amplitude(Paths.DATAFILE, Paths.POSITIONS)              # WORKING   but needs merge 1pdf
+    plot_amplitude_along_y_axis(Paths.DATAFILE, Paths.POSITIONS)     # WORKING
     ##################################
 
     ####### CHARGE COLLECTION ANALYSIS #######
@@ -35,10 +37,13 @@ def main():
     #plot_2d_charge(Paths.DATAFILE, Paths.POSITIONS)                 # WORKING   but needs merge 1pdf
     ##########################################
 
+    #plot_2d_amplitude_charge_everything()
+
     ####### TIMING ANALYSIS #######
     #plot_time_resolution_everything()                             # WORKING
-    #plot_2d_timing(Paths.DATAFILE, Paths.POSITIONS)                # WORKING   but needs merge 1pdf
     #plot_saved_results("Timing")                                   # WORKING
+    #plot_2d_timing(Paths.DATAFILE, Paths.POSITIONS)                # WORKING   but needs merge 1pdf
+    #plot_2d_timing_everything()
     ###############################
 
     ####### INTERPAD ANALYSIS #######
@@ -47,6 +52,9 @@ def main():
     #plot_time_resolution_interpad_region_everything()                # WORKING
     #plot_saved_results("Timing_interpad_region")                     # WORKING
     #################################
+
+    ######## save data processing #######
+    #merge_saved_results("saved_results/Collected_charge/W9_V2_TW1_lowV.pkl", "saved_results/Collected_charge/W9_V2_TW1_highV.pkl", "saved_results/Collected_charge/W9_V2_TW1_merged.pkl" )
 
 
     time_taken = round(time.time() - start_time)

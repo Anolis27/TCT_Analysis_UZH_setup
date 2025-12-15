@@ -534,3 +534,107 @@ def project_onto_y_one_channel(datafile, positions, channel, sensor_strip_positi
         # pdf.savefig(fig, dpi = 100)
         # plt.show()
     return result
+
+def plot_amplitude_along_y_axis(datafile, positions):
+    n_position, n_triggers, n_channels = query_dataset(datafile)
+    (x, y) = get_positions(positions)
+    print(x, y)
+    (active_ch1, active_ch2) = determine_active_channels(datafile)
+
+    ampl = {active_ch1: [], active_ch2: []}
+    charge = {active_ch1: [], active_ch2: []}
+
+    connection = sqlite3.connect(datafile)
+
+    for channel in (active_ch1, active_ch2):
+        df = pandas.read_sql(
+            f"""SELECT n_position,n_trigger,n_pulse, 
+                    `t_90 (s)`, `Time over 90% (s)`,
+                    `Amplitude (V)`, `Collected charge (V s)`, `t_50 (s)` 
+                FROM dataframe_table 
+                WHERE n_channel=={channel}""",
+            connection
+        )
+        df.set_index(['n_position','n_trigger','n_pulse'], inplace=True)
+
+        amplitude = df['Amplitude (V)']
+        collected = df['Collected charge (V s)']
+        t50 = df['t_50 (s)']
+        t90 = df['t_90 (s)']
+        dt90 = df['Time over 90% (s)']
+        x_positions = []
+
+        for i in range(n_position):
+            A, C = [], []
+            if x[i] != InterpadConfig.Y_POSITION_MID_PAD:
+                continue
+            x_positions.append(y[i])
+
+            for j in range(n_triggers):
+                amp = amplitude.get((i,j,1), numpy.nan)
+                chg = collected.get((i,j,1), numpy.nan)
+                # filtres
+                if math.isnan(amp) or amp > -0.00:
+                    continue
+                if math.isnan(chg) or chg > -0.00:
+                    continue
+
+                td = (t50[i, j, 2] - t50[i, j, 1]) * 1e9
+                if td < Filters.TIME_DIFF_MIN or td > Filters.TIME_DIFF_MAX:
+                    continue
+
+                peak = (t90[i,j,1] + 0.5*dt90[i,j,1]) * 1e9
+                if peak < Filters.PEAK_TIME_MIN or peak > Filters.PEAK_TIME_MAX:
+                    continue
+
+                A.append(amp)
+                C.append(chg)
+
+            ampl[channel].append(statistics.mean(A) if A else 0)
+            charge[channel].append(statistics.mean(C) if C else 0)
+    connection.close()
+    fig, axes = plt.subplots(ncols=2, figsize=(12,5))
+    ax1, ax2 = axes.flatten()
+
+    for channel in (active_ch1, active_ch2):
+
+        # --- NORMALISATION --- uncomment if needed
+        # ampl[channel] = ampl[channel] / numpy.max(numpy.abs(ampl[channel]))
+        # charge[channel] = charge[channel] / numpy.max(numpy.abs(charge[channel]))
+
+        # --- TRI DES DONNÉES ---
+        zipped = list(zip(x_positions, ampl[channel], charge[channel]))
+        zipped_sorted = sorted(zipped, key=lambda t: t[0])  # tri selon Y
+
+        y_sorted, ampl_sorted, charge_sorted = zip(*zipped_sorted)
+
+        # --- PLOTS TRIÉS ---
+        ax1.plot(
+            y_sorted, numpy.abs(ampl_sorted),
+            marker='o', linestyle='-', markersize=3,
+            label=f'Channel {channel}', color=Colors.CB_CYCLE[channel]
+        )
+
+        ax2.plot(
+            y_sorted, numpy.abs(charge_sorted),
+            marker='o', linestyle='-', markersize=3,
+            label=f'Channel {channel}', color=Colors.CB_CYCLE[channel]
+        )
+
+    ax1.set_xlabel("Y Position")
+    ax1.set_ylabel("Amplitude (V)")
+    ax1.set_title(f"Amplitude for Y = {InterpadConfig.Y_POSITION_MID_PAD}")
+    ax1.legend(loc="best")
+
+    ax2.set_xlabel("Y Position")
+    ax2.set_ylabel("Collected Charge (V s)")
+    ax2.set_title(f"Collected Charge for Y = {InterpadConfig.Y_POSITION_MID_PAD}")
+    ax2.legend(loc="best")
+
+    fig.suptitle(f'Amplitude and Collected Charge projected on X axis, {datafile[48:57]}, {datafile[58:62]}')
+    plt.tight_layout()
+    plt.show()
+
+    return None
+
+

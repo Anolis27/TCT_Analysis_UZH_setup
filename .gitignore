@@ -1,5 +1,6 @@
 # IGNORE EVERYTHING
 *
+*.pyc
 
 # EXCEPTIONS (files you want to track)
 !/.gitignore
@@ -20,6 +21,7 @@
 # BUT ignore its Data subfolder
 LGAD_ANALYSIS/Data/
 LGAD_ANALYSIS/Data/**
+LGAD_ANALYSIS/__pycache__/
 LGAD_ANALYSIS/saved_results/
 LGAD_ANALYSIS/saved_results/**
 CASSIA_ANALYSIS/Data/

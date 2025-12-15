@@ -52,12 +52,12 @@ def plot_saved_results(analysis):
             plt.title("Collected Charge against Bias Voltage")
             plt.ylabel("Mean Collected Charge (Vns)")
         elif analysis == "Timing":
-            plt.title("Time Resolution against Bias Voltage")
-            plt.ylabel("Time Resolution (ns)")
+            plt.title("Jitter against Bias Voltage")
+            plt.ylabel("Jitter (ns)")
 
         plt.xlabel("Bias Voltage (V)")
         plt.gca().invert_xaxis()
-        plt.legend(fontsize=8)
+        plt.legend(fontsize=10)
         plt.tight_layout()
         plt.savefig(f"{analysis}_saved_results.pdf", format='pdf', dpi=1200)
         #plt.show()
@@ -112,9 +112,9 @@ def plot_saved_results(analysis):
                     color_index += 1
 
                 # Final formatting of the sensor plot
-                plt.title(f"Time Resolution in Interpad Region — {sensor}")
+                plt.title(f"Jitter in Interpad Region — {sensor}")
                 plt.xlabel("y Position (µm)")
-                plt.ylabel("Time Resolution (ns)")
+                plt.ylabel("Jitter (ns)")
                 plt.ylim(bottom=InterpadConfig.INTERPAD_TIMING_SCALE[0], top=InterpadConfig.INTERPAD_TIMING_SCALE[1]) # ajust scale
                 plt.gca().invert_xaxis()
                 plt.legend(loc="best")
