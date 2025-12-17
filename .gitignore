@@ -22,6 +22,7 @@
 LGAD_ANALYSIS/Data/
 LGAD_ANALYSIS/Data/**
 LGAD_ANALYSIS/__pycache__/
+LGAD_ANALYSIS/__pycache__/**
 LGAD_ANALYSIS/saved_results/
 LGAD_ANALYSIS/saved_results/**
 CASSIA_ANALYSIS/Data/
