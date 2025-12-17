@@ -151,7 +151,7 @@ def get_interpad_distance(datafile, positions, channel1, sensor_strip_positions1
     plt.title(f"{datafile}")# , {datafile[12:16]}")
     plt.gca().invert_xaxis()
     plt.xlabel(r"x ($\mu$m)")
-    plt.ylabel("Collected Charge (nV S)")
+    plt.ylabel("Normalized Collected Charge")
     plt.legend(bbox_to_anchor=(1.0, 1), loc="upper left", fontsize="small")
     plt.tight_layout()
     #plt.show()
