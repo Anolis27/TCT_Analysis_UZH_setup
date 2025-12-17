@@ -50,15 +50,20 @@ class Filters:  # key values for Ti-LGAD
 class InterpadConfig:
     INTERPAD_REGION_MIN = - 75 # um
     INTERPAD_REGION_MAX = 75    # um
-    Y_POSITION_MID_PAD = 15     # um y position for plot_amplitude_along_y_axis and time_resolution_interpad_region
+    X_STEP = 5                 # um step size
+    Y_POSITION_MID_PAD = 5     # um y position for plot_amplitude_along_y_axis and time_resolution_interpad_region
     INTERPAD_FRACTION = 0.9     # fraction of the sigmoid used for interpad distance calculation
-    INTERPAD_TIMING_SCALE = (0.01, 0.085)  # y-axis limits for interpad timing plots (ns)
+    INTERPAD_TIMING_SCALE = (0.0, 0.1)  # y-axis limits for interpad timing plots (ns)
     POINTS_FROM_EDGE_STRIP_POSITION = 2  # number of points from edge not to consider (usually 2)
     
 class Subplots:
     AMPLITUDE_ONE_PAD = True
     CHARGE_COLLECTION_ONE_PAD = True
     TIMING_ONE_PAD = True
+
+class PlotsConfig:
+    AMPLITUDE_V_MAX = 0
+    CHARGE_COLLECTION_V_MAX = 0
 
 class Colors:
     CB_CYCLE = [

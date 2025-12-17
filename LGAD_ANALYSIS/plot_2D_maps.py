@@ -9,7 +9,7 @@ import seaborn as sns
 from scipy.optimize import curve_fit
 from matplotlib.backends.backend_pdf import PdfPages
 
-from config import Paths, Colors, Filters
+from config import Paths, Colors, Filters, PlotsConfig
 from data_manager import (
     gaussian,
     query_dataset,
@@ -64,9 +64,9 @@ def compute_amplitude_and_charge(datafile, positions):
                 if td < Filters.TIME_DIFF_MIN or td > Filters.TIME_DIFF_MAX:
                     continue
 
-                peak = (t90[i,j,1] + 0.5*dt90[i,j,1]) * 1e9
-                if peak < Filters.PEAK_TIME_MIN or peak > Filters.PEAK_TIME_MAX:
-                    continue
+                # peak = (t90[i,j,1] + 0.5*dt90[i,j,1]) * 1e9
+                # if peak < Filters.PEAK_TIME_MIN or peak > Filters.PEAK_TIME_MAX:
+                #     continue
 
                 A.append(amp)
                 C.append(chg)
@@ -80,10 +80,9 @@ def compute_amplitude_and_charge(datafile, positions):
 
     return x, y, ampl, charge, active_ch1, active_ch2
 
-
-def plot_heatmap(x, y, z, pdf, unit, title, max_v= 0):
+def plot_heatmap(x, y, z, pdf, unit, title, vmax=None):
     plt.clf()
-    fig, ax = plt.subplots(figsize=(10,10))
+    fig, ax = plt.subplots(figsize=(10, 10))
 
     data_frame = pd.DataFrame({'x': x, 'y': y, 'z': z})
     heatmap = data_frame.pivot_table(
@@ -91,8 +90,14 @@ def plot_heatmap(x, y, z, pdf, unit, title, max_v= 0):
     )
 
     sns.heatmap(
-        heatmap, annot=False, cmap="plasma_r", vmax=max_v,
-        square=True, ax=ax, yticklabels=5, xticklabels=5,
+        heatmap,
+        annot=False,
+        cmap="plasma_r",
+        vmax=vmax,                 
+        square=True,
+        ax=ax,
+        yticklabels=5,
+        xticklabels=5,
         cbar_kws={"shrink": 0.5}
     )
 
@@ -100,12 +105,14 @@ def plot_heatmap(x, y, z, pdf, unit, title, max_v= 0):
     plt.title(title, fontsize=20)
     plt.xlabel(r"x ($\mu$m)", fontsize=18)
     plt.ylabel(r"y ($\mu$m)", fontsize=18)
+
     cbar = ax.collections[0].colorbar
     cbar.set_label(unit, fontsize=18)
 
     plt.tight_layout()
     pdf.savefig(fig)
     plt.close()
+
 
 
 
@@ -309,7 +316,6 @@ def plot_2d_timing_everything(dir_in_str = "Data/"):
 
                 if not os.path.isfile(datafile) or not os.path.isfile(positions):
                     continue
-
 
                 x, y, times, ch1, ch2 = compute_timing(datafile, positions)
 

@@ -468,7 +468,7 @@ def project_onto_y_two_channels(datafile, positions, channel1, channel2, sensor_
     result['y axis'] = (result['y axis'] - min(result['y axis'])) / (max(result['y axis']) - min(result['y axis']))
     return result
 
-def project_onto_y_one_channel(datafile, positions, channel, sensor_strip_positions):
+def project_onto_y_one_channel_amplitude(datafile, positions, channel, sensor_strip_positions):
     n_position, n_triggers, n_channels = query_dataset(datafile)
     (x,y) = get_positions(positions)
     amplitudes = {} # {y position: [list of amplitudes]}

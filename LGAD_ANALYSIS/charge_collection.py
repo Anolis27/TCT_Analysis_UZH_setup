@@ -186,3 +186,72 @@ def plot_collected_charge_everything(directory_in_str = "Data/"):
         pdf.savefig(fig, dpi = 100)
         save_results(final_plot, analysis="Collected_charge")
     return None
+
+def project_onto_y_one_channel_charge(datafile, positions, channel, sensor_strip_positions):
+    n_position, n_triggers, n_channels = query_dataset(datafile)
+    (x,y) = get_positions(positions)
+    amplitudes = {} # {y position: [list of amplitudes]}
+    collected_charges = {} # {y position: [list of collected charge]}
+    connection = sqlite3.connect(datafile)
+    data = pandas.read_sql(f"SELECT n_position,n_trigger,n_pulse, `t_90 (s)`, `Time over 90% (s)`,`Amplitude (V)`, `Collected charge (V s)`, `t_50 (s)` FROM dataframe_table WHERE n_channel=={channel}", connection)
+    data.set_index(['n_position','n_trigger','n_pulse'], inplace=True)
+    amplitude_data = data['Amplitude (V)']
+    collected_charge_data = data['Collected charge (V s)']
+    t_50_data = data['t_50 (s)']
+    t_90_data = data["t_90 (s)"]
+    time_over_90_data = data['Time over 90% (s)']
+    # all_amps = amplitude_data.values
+    # min_val = numpy.nanmin(all_amps)
+    # max_val = numpy.nanmax(all_amps)
+
+    for i in sensor_strip_positions:
+        for j in range(n_triggers):
+            amplitude = amplitude_data[i,j,1]
+            collected_charge = collected_charge_data[i,j,1] * 1e9
+            if math.isnan(amplitude) or amplitude > 0.02: 
+                continue
+            time_diff = (t_50_data[i,j,2] - t_50_data[i,j,1]) * 1e9
+            if time_diff < Filters.TIME_DIFF_MIN or time_diff > Filters.TIME_DIFF_MAX:
+                continue
+            peak_time = (t_90_data[i,j,1] + 0.5 * time_over_90_data[i,j,1]) * 1e9
+            if peak_time < Filters.PEAK_TIME_MIN or peak_time > Filters.PEAK_TIME_MAX:
+                continue
+
+            if y[i] not in collected_charges:
+                collected_charges[y[i]] = []
+            collected_charges[y[i]].append(collected_charge)
+
+    result = {"x axis": [], "y axis": [], "y error": []}
+
+    for y_position in sorted(collected_charges):
+        hist = collected_charges[y_position]
+        if len(hist) == 1: # toss
+            continue
+        mu, std = statistics.mean(hist), statistics.stdev(hist)
+
+        if len(hist) < 10: # no fit if less than this amount of points
+            # result["x axis"].append(y_position)
+            # result["y axis"].append(abs(mu))
+            # result["y error"].append(std) 
+            continue 
+
+        bin_min = mu - 4 * std; bin_max = mu + 4 * std
+        bin_width = 0.0005 # hardcoded bin width
+        n_bins = round( (bin_max - bin_min) / bin_width )
+        custom_bins = numpy.linspace(bin_min, bin_max, n_bins ,endpoint=True)
+        (n, bins, patches) = plt.hist(hist, bins=custom_bins, density=True, stacked=False ,histtype='stepfilled', alpha = 0.5, lw=1, label=f"Data (${{\mu}}$ = {round(mu,2)}, ${{\sigma}}$ = {round(std,2)})")
+        bin_centers = (bins[:-1] + bins[1:]) / 2
+        (muf, stdf), covf = curve_fit(gaussian, bin_centers, n, maxfev=10000, p0=[mu, std])
+        result["x axis"].append(y_position)
+        result["y axis"].append(abs(muf))
+        result["y error"].append(stdf)  
+
+        # plt.title(f"Histogram collected charge — y = {y_position}")
+        # plt.xlabel("Collected Charge (V s)")
+        # plt.ylabel("Frequency")
+        # plt.legend()
+        # fig = plt.gcf()
+        # plt.plot(fit_x_axis, fit_y_axis, color = "r", label=f"Fit (${{\mu}}$ = {round(muf,2)}, ${{\sigma}}$ = {round(stdf,2)})")
+        # pdf.savefig(fig, dpi = 100)
+        # plt.show()
+    return result

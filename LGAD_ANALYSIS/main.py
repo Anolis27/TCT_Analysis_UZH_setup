@@ -28,7 +28,7 @@ def main():
     #plot_amplitude_everything()                                      # WORKING
     #plot_saved_results("Amplitude")                                   # WORKING
     #plot_2d_amplitude(Paths.DATAFILE, Paths.POSITIONS)              # WORKING   but needs merge 1pdf
-    plot_amplitude_along_y_axis(Paths.DATAFILE, Paths.POSITIONS)     # WORKING
+    #plot_amplitude_along_y_axis(Paths.DATAFILE, Paths.POSITIONS)     # WORKING
     ##################################
 
     ####### CHARGE COLLECTION ANALYSIS #######
@@ -54,7 +54,7 @@ def main():
     #################################
 
     ######## save data processing #######
-    #merge_saved_results("saved_results/Collected_charge/W9_V2_TW1_lowV.pkl", "saved_results/Collected_charge/W9_V2_TW1_highV.pkl", "saved_results/Collected_charge/W9_V2_TW1_merged.pkl" )
+    #merge_saved_results("saved_results/Collected_charge/W9_V2_TW1_lowV.pkl", "saved_results/Collected_charge/W9_V2_TW1_highV.pkl", "saved_results/Collected_charge/W9_V2_TW1_merged.pkl" ) # NOT WORKING
 
 
     time_taken = round(time.time() - start_time)
