@@ -16,13 +16,12 @@ from matplotlib import figure
 from matplotlib.backends.backend_pdf import PdfPages
 import statistics
 
-def plot_amplitude(datafile, positions):
+def plot_amplitude(datafile):
     n_position, n_triggers, n_channels = query_dataset(datafile)
     amplitudes = {}
     (chan1, chan2) = determine_active_channels(datafile)
     connection = sqlite3.connect(datafile)
     for channel in (chan1, chan2):
-        pad_positions = get_pad_positions(datafile, positions, channel)
         data = pandas.read_sql(f"SELECT n_position,n_trigger,n_pulse, `t_90 (s)`, `Time over 90% (s)`,`Amplitude (V)`, `t_50 (s)` FROM dataframe_table WHERE n_channel=={channel}", connection)
         data.set_index(['n_position','n_trigger','n_pulse'], inplace=True)
         amplitude_data = data['Amplitude (V)']
@@ -45,58 +44,79 @@ def plot_amplitude(datafile, positions):
     fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(10,5))
     ax1, ax2 = axes.flatten()
     subplots = (ax1, ax2)
+    plot = 0 
     for channel in (chan1, chan2):
-        (n, bins, patches) = subplots[channel - 1].hist(amplitudes[channel], bins=100, density=True, stacked=False ,histtype='stepfilled', alpha = 0.5, lw=1, label=f"Channel {channel}")
+        (n, bins, patches) = subplots[plot].hist(amplitudes[channel], bins=100, density=True, stacked=False ,histtype='stepfilled', alpha = 0.5, lw=1, label=f"Channel {channel}", color=Colors.CB_CYCLE[plot])
         bin_centers = (bins[:-1] + bins[1:]) / 2
-        mu, std = statistics.mean(amplitudes[channel]), statistics.stdev(amplitudes[channel])
-        (muf, stdf), covf = curve_fit(gaussian, bin_centers, n, maxfev=10000, p0=[mu, std])
+        # mu, std = statistics.mean(amplitudes[channel]), statistics.stdev(amplitudes[channel])
+        # (muf, stdf), covf = curve_fit(gaussian, bin_centers, n, maxfev=10000, p0=[mu, std])
         fit_x_axis = numpy.linspace(min(bin_centers), max(bin_centers), 200, endpoint=True)
-        fit_y_axis = gaussian(fit_x_axis, muf, stdf)
-        subplots[channel - 1].plot(fit_x_axis, fit_y_axis, color = "r")
-        subplots[channel - 1].set_xlabel(f"Amplitude (V)")
-        subplots[channel - 1].set_ylabel(f"Number")
-        subplots[channel - 1].legend(loc = "upper left")
-    fig.suptitle(f'{datafile[5:11]}, {datafile[12:16]}')
+        # fit_y_axis = gaussian(fit_x_axis, muf, stdf)
+        # subplots[plot].plot(fit_x_axis, fit_y_axis, color = "r")
+        subplots[plot].axvline(x=Filters.AMPLITUDE_THRESHOLD, color='k', linestyle='--', label='Amplitude Threshold')
+        subplots[plot].set_xlabel(f"Amplitude (V)")
+        subplots[plot].set_ylabel(f"Frequency")
+        subplots[plot].legend(loc = "upper left")
+        plot += 1
+    fig.suptitle(f'{datafile[48:57]}, {datafile[58:62]}')
     plt.show()
     return None
 
-def plot_noise(datafile, fig, ax1, ax2):
-    n_position, n_triggers, n_channels = query_dataset(datafile)
+def plot_noise(datafile):
+    active_channels = determine_active_channels(datafile)
     noise = {}
-    connection = sqlite3.connect(datafile)
-    for channel in range(1, n_channels + 1):
-        data = pandas.read_sql(f"SELECT n_position,n_trigger,`Noise (V)` FROM dataframe_table WHERE n_pulse==1 and n_channel=={channel}", connection)
-        data.set_index(['n_position','n_trigger'], inplace=True)
-        noise_data = data['Noise (V)']
-        noise[channel] = noise_data.to_numpy()
-    connection.close()
-    
-    fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(12,6))
-    for channel in (1,2):
-        bin_min = numpy.nanmedian(noise[channel]) - 0/2; bin_max = numpy.nanmedian(noise[channel]) + 0
-        custom_bins = numpy.linspace(bin_min, bin_max, 50 ,endpoint=True)
-        ax1.hist(noise[channel], bins=custom_bins, stacked=False ,histtype='step', edgecolor=Colors.CB_CYCLE[channel], lw=1, label=f"Channel {channel}", weights= (1 / len(noise[channel])) * numpy.ones(len(noise[channel])))
-        
-        ax1.set_xlabel(r"Noise (V)")
-        ax1.set_ylabel(f"Frequency")
-        ax1.legend(loc = "best")
 
-    for channel in (3,4):
-        bin_min = 0; bin_max = 0
-        custom_bins = numpy.linspace(bin_min, bin_max, 100 ,endpoint=True)
-        ax2.hist(noise[channel], bins=custom_bins, stacked=False ,histtype='step', edgecolor=Colors.CB_CYCLE[channel], lw=1, label=f"Channel {channel}", weights= (1 / len(noise[channel])) * numpy.ones(len(noise[channel])))
-        ax2.set_xlabel(r"Noise (V)")
-        ax2.set_ylabel(f"Frequency")
-        ax2.legend(loc = "best")
-    fig.suptitle(f'{datafile}')
-    # plt.show()
-    return None
+    connection = sqlite3.connect(datafile)
+    for channel in active_channels:
+        data = pandas.read_sql(
+            f"""
+            SELECT n_position, n_trigger, `Noise (V)`
+            FROM dataframe_table
+            WHERE n_pulse = 1 AND n_channel = {channel}
+            """,
+            connection
+        )
+        data.set_index(['n_position', 'n_trigger'], inplace=True)
+        noise[channel] = data['Noise (V)'].to_numpy()
+    connection.close()
+
+    plt.figure(figsize=(8, 6))
+    for channel in active_channels:
+        values = noise[channel]
+        values = values[numpy.isfinite(values)]
+        if len(values) < 10:
+            continue
+        mu = numpy.median(values)
+        std = numpy.std(values)
+        if std <= 0:
+            continue
+        bin_min = mu - 4 * std
+        bin_max = mu + 4 * std
+        n_bins = 50
+        bins = numpy.linspace(bin_min, bin_max, n_bins)
+        plt.hist(
+            values,
+            bins=bins,
+            histtype='step',
+            lw=1.5,
+            density=True,
+            label=f"Channel {channel}",
+            color=Colors.CB_CYCLE[channel]
+        )
+    plt.xlabel(r"Noise (V)")
+    plt.ylabel("Frequency")
+    plt.title(f"Noise distribution — {datafile[48:57]}, {datafile[58:62]}")
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
 
 def plot_amplitude_against_t_peak(datafile, time_variable = "t_90 (s)"):
     n_position, n_triggers, n_channels = query_dataset(datafile)
     result = {} #channel: ([time],[amplitude])
+    active_channels = determine_active_channels(datafile)
     connection = sqlite3.connect(datafile)
-    for channel in range(1, n_channels + 1):
+    for channel in active_channels:
         data = pandas.read_sql(f"SELECT n_position,n_trigger,n_pulse, `{time_variable}`, `Time over 90% (s)`,`Amplitude (V)`, `t_50 (s)`,`Noise (V)` FROM dataframe_table WHERE n_channel=={channel}", connection)
         data.set_index(['n_position','n_trigger','n_pulse'], inplace=True)
         time_data = data[f"{time_variable}"]
@@ -123,15 +143,18 @@ def plot_amplitude_against_t_peak(datafile, time_variable = "t_90 (s)"):
     fig, axes = plt.subplots(ncols=2, figsize=(12,5))
     ax1, ax2 = axes.flatten()
     subplots = (ax1, ax2)
-    for channel in (1,2):
-        subplots[channel - 1].plot(result[channel][0], result[channel][1], ".", label=f'Channel {channel}', markersize=2, color=Colors.CB_CYCLE[channel])
-        subplots[channel - 1].set_xlim(4,9)
-        subplots[channel - 1].set_ylim(-2,0)
-        subplots[channel - 1].set_xlabel(f"Peak Time (ns)")
-        subplots[channel - 1].set_ylabel(f"Amplitude (V)")
-        subplots[channel - 1].legend(loc = "best")
+    plot=0
+    for channel in active_channels:
+        subplots[plot].plot(result[channel][0], result[channel][1], ".", label=f'Channel {channel}', markersize=2, color=Colors.CB_CYCLE[plot])
+        subplots[plot].set_xlim(4,9)
+        subplots[plot].set_xlabel(f"Peak Time (ns)")
+        subplots[plot].set_ylabel(f"Amplitude (V)")
+        subplots[plot].axvline(x=Filters.PEAK_TIME_MIN, color='red', linestyle='--', label='Peak Time Min')
+        subplots[plot].axvline(x=Filters.PEAK_TIME_MAX, color='blue', linestyle='--', label='Peak Time Max')
+        subplots[plot].legend(loc = "best")
+        plot += 1
 
-    fig.suptitle(f'Amplitude against Peak Time, {datafile[5:11]}, {datafile[12:15]}')
+    fig.suptitle(f'Amplitude against Peak Time, {datafile[48:57]}, {datafile[58:62]}')
     plt.show()
     return None
 
@@ -175,7 +198,7 @@ def plot_amplitude_of_one_pad(datafile, channel, pad_positions):
         plt.xlabel(f"Amplitude (V)")
         plt.ylabel(f"Frequency")
         plt.legend(loc = "best")
-        plt.title(f'{datafile[5:11]}, {datafile[12:16]}, Channel {channel}')
+        plt.title(f'{datafile[48:57]}, {datafile[58:62]}, Channel {channel}')
         # plt.show()
     return (muf, stdf)
 
@@ -388,85 +411,6 @@ def plot_2D_separate(datafile, positions):
     plt.tight_layout()
     plt.show()
     return None               
-
-
-def project_onto_y_two_channels(datafile, positions, channel1, channel2, sensor_strip_positions1, sensor_strip_positions2, pdf):
-    n_position, n_triggers, n_channels = query_dataset(datafile)
-    (x,y) = get_positions(positions)
-    amplitudes = {} # {y position: [list of amplitudes]}
-    counter = {}
-    result = {"x axis": [], "y axis": [], "y error": []}
-    connection = sqlite3.connect(datafile)
-    data = pandas.read_sql(f"SELECT n_position,n_trigger,n_pulse,n_channel, `t_90 (s)`, `Time over 90% (s)`,`Amplitude (V)`, `t_50 (s)` FROM dataframe_table", connection)
-    data.set_index(['n_position','n_trigger','n_pulse','n_channel'], inplace=True)
-    amplitude_data = data['Amplitude (V)']
-    t_50_data = data['t_50 (s)']
-    t_90_data = data["t_90 (s)"]
-    time_over_90_data = data['Time over 90% (s)']
-    sensor_strip_positions = list(set(sensor_strip_positions1 + sensor_strip_positions2))
-    # for normalisation 
-    # pad_positions = get_pad_positions(datafile, positions, channel1)
-    # (ch1_norm, ch1_norm_err) = plot_amplitude_of_one_pad(datafile, channel1, pad_positions)
-    # pad_positions = get_pad_positions(datafile, positions, channel2)
-    # (ch2_norm, ch2_norm_err) = plot_amplitude_of_one_pad(datafile, channel2, pad_positions)
-    for i in sensor_strip_positions:
-        for j in range(n_triggers):
-            amplitude1 = amplitude_data[i,j,1,channel1]
-            time_diff1 = (t_50_data[i,j,2,channel1] - t_50_data[i,j,1,channel1]) * 1e9
-            peak_time1 = (t_90_data[i,j,1,channel1] + 0.5 * time_over_90_data[i,j,1,channel1]) * 1e9
-            amplitude2 = amplitude_data[i,j,1,channel2]
-            time_diff2 = (t_50_data[i,j,2,channel2] - t_50_data[i,j,1,channel2]) * 1e9
-            peak_time2 = (t_90_data[i,j,1,channel2] + 0.5 * time_over_90_data[i,j,1,channel2]) * 1e9
-            # if any of them fail cut, set to 0
-            if math.isnan(amplitude1) or amplitude1 > Filters.AMPLITUDE_THRESHOLD:
-                amplitude1 = 0
-            if time_diff1 < Filters.TIME_DIFF_MIN or time_diff1 > Filters.TIME_DIFF_MAX:
-                amplitude1 = 0
-            if peak_time1 < Filters.PEAK_TIME_MIN or peak_time1 > Filters.PEAK_TIME_MAX:
-                amplitude1 = 0
-            if math.isnan(amplitude2) or amplitude2 > Filters.AMPLITUDE_THRESHOLD: # FOR SOME REASON WAS 0
-                amplitude2 = 0
-            if time_diff2 < Filters.TIME_DIFF_MIN or time_diff2 > Filters.TIME_DIFF_MAX:
-                amplitude2 = 0
-            if peak_time2 < Filters.PEAK_TIME_MIN or peak_time2 > Filters.PEAK_TIME_MAX:
-                amplitude2 = 0
-            # if both fails cut, go next
-            if amplitude1 + amplitude2 == 0:
-                continue
-
-            if y[i] not in amplitudes:
-                amplitudes[y[i]] = []
-            sum_amplitude = amplitude1 + amplitude2
-            amplitudes[y[i]].append(sum_amplitude)
-    
-
-    for y_position in sorted(amplitudes):
-        plt.clf()
-        hist = amplitudes[y_position]
-        mu, std = statistics.mean(hist), statistics.stdev(hist)
-        bin_min = mu - 4 * std; bin_max = mu + 4 * std
-        bin_width = 0.0005 # hardcoded bin width (initial value = 0.05)
-        n_bins = round( (bin_max - bin_min) / bin_width )
-        custom_bins = numpy.linspace(bin_min, bin_max, n_bins ,endpoint=True)
-        (n, bins, patches) = plt.hist(hist, bins="auto", density=True, stacked=False ,histtype='stepfilled', alpha = 0.5, lw=1, label=f"Data (${{\mu}}$ = {round(mu,2)}, ${{\sigma}}$ = {round(std,2)})")
-        bin_centers = (bins[:-1] + bins[1:]) / 2
-        (muf, stdf), covf = curve_fit(gaussian, bin_centers, n, maxfev=10000, p0=[mu, std])
-        fit_x_axis = numpy.linspace(min(bin_centers), max(bin_centers), 200, endpoint=True)
-        fit_y_axis = gaussian(fit_x_axis, muf, stdf)
-        result["x axis"].append(y_position)
-        result["y axis"].append(abs(muf))
-        result["y error"].append(stdf)
-        # plt.plot(fit_x_axis, fit_y_axis, color = "r", label=f"Fit (${{\mu}}$ = {round(muf,2)}, ${{\sigma}}$ = {round(stdf,2)})")
-        # plt.xlabel(f"Amplitude")
-        # plt.ylabel(f"Frequency")
-        # plt.legend(loc = "best")
-        # plt.title(f'{datafile[5:11]}, {datafile[12:16]}, Channel {channel1} + {channel2}, y: {y_position} ${{\mu}}$m, N: {len(hist)}')
-        # fig = plt.gcf()
-        # pdf.savefig(fig, dpi = 100)
-    
-    # normalisation of result
-    result['y axis'] = (result['y axis'] - min(result['y axis'])) / (max(result['y axis']) - min(result['y axis']))
-    return result
 
 def project_onto_y_one_channel_amplitude(datafile, positions, channel, sensor_strip_positions):
     n_position, n_triggers, n_channels = query_dataset(datafile)

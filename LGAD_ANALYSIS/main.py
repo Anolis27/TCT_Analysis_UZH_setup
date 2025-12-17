@@ -27,14 +27,18 @@ def main():
     ####### AMPLITUDE ANALYSIS #######
     #plot_amplitude_everything()                                      # WORKING
     #plot_saved_results("Amplitude")                                   # WORKING
-    #plot_2d_amplitude(Paths.DATAFILE, Paths.POSITIONS)              # WORKING   but needs merge 1pdf
+    #plot_2d_amplitude(Paths.DATAFILE, Paths.POSITIONS)              # WORKING  
     #plot_amplitude_along_y_axis(Paths.DATAFILE, Paths.POSITIONS)     # WORKING
+    #plot_noise(Paths.DATAFILE)                                      # WORKING
+    #plot_amplitude_against_t_peak(Paths.DATAFILE, time_variable = "t_90 (s)")  # WORKING
+    #plot_amplitude(Paths.DATAFILE)                              # NOT WORKING
     ##################################
 
     ####### CHARGE COLLECTION ANALYSIS #######
     #plot_collected_charge_everything()                              # WORKING
     #plot_saved_results("Collected_charge")                            # WORKING
-    #plot_2d_charge(Paths.DATAFILE, Paths.POSITIONS)                 # WORKING   but needs merge 1pdf
+    #plot_2d_charge(Paths.DATAFILE, Paths.POSITIONS)                 # WORKING   
+    #plot_collected_charge(Paths.DATAFILE)                            # WORKING
     ##########################################
 
     #plot_2d_amplitude_charge_everything()
@@ -42,8 +46,8 @@ def main():
     ####### TIMING ANALYSIS #######
     #plot_time_resolution_everything()                             # WORKING
     #plot_saved_results("Timing")                                   # WORKING
-    #plot_2d_timing(Paths.DATAFILE, Paths.POSITIONS)                # WORKING   but needs merge 1pdf
-    #plot_2d_timing_everything()
+    #plot_2d_timing(Paths.DATAFILE, Paths.POSITIONS)                # WORKING  
+    #plot_2d_timing_everything()                                   # WORKING
     ###############################
 
     ####### INTERPAD ANALYSIS #######

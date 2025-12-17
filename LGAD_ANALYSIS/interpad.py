@@ -28,29 +28,32 @@ def get_interpad_distance(datafile, positions, channel1, sensor_strip_positions1
     #                                               sensor_strip_positions1, sensor_strip_positions2, pdf)
     channel1_result = project_onto_y_one_channel_charge(datafile, positions, channel1, sensor_strip_positions1)
     channel2_result = project_onto_y_one_channel_charge(datafile, positions, channel2, sensor_strip_positions2)
+    # both_channels   = project_onto_y_two_channels_charge(datafile, positions, channel1, channel2,
+    #                                                     sensor_strip_positions1, sensor_strip_positions2, pdf)
 
     plt.clf()
 
     # ============================
     # Channel 1
     # ============================
-    x_axis = numpy.array(channel1_result["x axis"])
-    y_axis = numpy.array(channel1_result["y axis"])
-    y_err  = numpy.array(channel1_result["y error"])
+    x_axis1 = numpy.array(channel1_result["x axis"])
+    y_axis1 = numpy.array(channel1_result["y axis"])
+    y_err1  = numpy.array(channel1_result["y error"])
     #print(y_axis)
 
     # --- Normalize once: scale data to [0, 1] ---
-    y_min = y_axis.min()
-    y_max = y_axis.max()
+    y_min = y_axis1.min()
+    y_max = y_axis1.max()
 
-    y_norm = (y_axis - y_min) / (y_max - y_min)
-    y_err_norm = y_err / (y_max - y_min)   # error scales identically
+    y_norm1 = (y_axis1 - y_min) / (y_max - y_min)
+    y_err_norm1 = y_err1 / (y_max - y_min)   # error scales identically
+    x_y_err1 = zip(x_axis1, y_norm1, y_err_norm1)
 
     # --- Sigmoid fit on normalized data ---
-    guess = [numpy.median(x_axis), 1.0, 0.0, 1.0]
+    guess = [numpy.median(x_axis1), 1.0, 0.0, 1.0]
     popt, pcov = curve_fit(
-        sigmoid, x_axis, y_norm, p0=guess,
-        sigma=y_err_norm, absolute_sigma=True,
+        sigmoid, x_axis1, y_norm1, p0=guess,
+        sigma=y_err_norm1, absolute_sigma=True,
         maxfev=10000, method="dogbox"
     )
 
@@ -75,33 +78,35 @@ def get_interpad_distance(datafile, positions, channel1, sensor_strip_positions1
 
 
     # --- Generate fit curve ---
-    fine_x = numpy.linspace(x_axis.min(), x_axis.max(), 500)
+    fine_x = numpy.linspace(x_axis1.min(), x_axis1.max(), 500)
     fit_norm = sigmoid(fine_x, *popt)
 
     # --- Plot Ch 1 ---
     plt.plot(fine_x, fit_norm, "-", label=f"Ch {channel1} Fit", color=Colors.CB_CYCLE[0])
-    plt.plot(x_axis, y_norm, ".", markersize=3, label=f"Ch {channel1} Data", color=Colors.CB_CYCLE[0])
-    plt.errorbar(x_axis, y_norm, yerr=y_err_norm, ls="none", ecolor="k",
+    plt.plot(x_axis1, y_norm1, ".", markersize=3, label=f"Ch {channel1} Data", color=Colors.CB_CYCLE[0])
+    plt.errorbar(x_axis1, y_norm1, yerr=y_err_norm1, ls="none", ecolor="k",
                  elinewidth=1, capsize=2)
     plt.axvline(x=ch1_xfrac, ymin=0, ymax=1, color='k', label=f'x{channel1} at {InterpadConfig.INTERPAD_FRACTION*100}% = {round(ch1_xfrac,2)}', ls = (0, (5, 10)), linewidth=0.6)
 
     # ============================
     # Channel 2
     # ============================
-    x_axis = numpy.array(channel2_result["x axis"])
-    y_axis = numpy.array(channel2_result["y axis"])
-    y_err  = numpy.array(channel2_result["y error"])
+    x_axis2 = numpy.array(channel2_result["x axis"])
+    y_axis2 = numpy.array(channel2_result["y axis"])
+    y_err2  = numpy.array(channel2_result["y error"])
+    
 
     # --- Normalize once: scale data to [0, 1] ---
-    y_min = y_axis.min()
-    y_max = y_axis.max()
+    y_min = y_axis2.min()
+    y_max = y_axis2.max()
 
-    y_norm = (y_axis - y_min) / (y_max - y_min)
-    y_err_norm = y_err / (y_max - y_min)   # error scales identically
+    y_norm2 = (y_axis2 - y_min) / (y_max - y_min)
+    y_err_norm2 = y_err2 / (y_max - y_min)   # error scales identically
+    x_y_err2 = zip(x_axis2, y_norm2, y_err_norm2)
 
     # --- Sigmoid fit ---
-    guess = [numpy.median(x_axis), 1.0, 0.0, 1.0]
-    popt, pcov = curve_fit(sigmoid, x_axis, y_norm, p0=guess,
+    guess = [numpy.median(x_axis2), 1.0, 0.0, 1.0]
+    popt, pcov = curve_fit(sigmoid, x_axis2, y_norm2, p0=guess,
                            maxfev=10000, method="dogbox")
 
     # === get x at 50% ===
@@ -124,26 +129,39 @@ def get_interpad_distance(datafile, positions, channel1, sensor_strip_positions1
     ch2_sigma_xfrac = numpy.sqrt( (ch2_dx_dx0*ch2_sigma_x0)**2 + (ch2_dx_dk*ch2_sigma_k)**2 + 2*ch2_dx_dx0*ch2_dx_dk*cov_x0k )
 
     # --- Fit curve ---
-    fine_x = numpy.linspace(x_axis.min(), x_axis.max(), 500)
+    fine_x = numpy.linspace(x_axis2.min(), x_axis2.max(), 500)
     fit_norm = sigmoid(fine_x, *popt)
 
     # --- Plot Ch 2 ---
     plt.plot(fine_x, fit_norm, "-", label=f"Ch {channel2} Fit", color=Colors.CB_CYCLE[1])
-    plt.plot(x_axis, y_norm, ".", markersize=3, label=f"Ch {channel2} Data", color=Colors.CB_CYCLE[1])
-    plt.errorbar(x_axis, y_norm, yerr=y_err_norm, ls="none", ecolor="k",
+    plt.plot(x_axis2, y_norm2, ".", markersize=3, label=f"Ch {channel2} Data", color=Colors.CB_CYCLE[1])
+    plt.errorbar(x_axis2, y_norm2, yerr=y_err_norm2, ls="none", ecolor="k",
                  elinewidth=1, capsize=2)
     plt.axvline(x=ch2_xfrac, ymin=0, ymax=1, color='k', label=f'x{channel2} at {InterpadConfig.INTERPAD_FRACTION*100}% = {round(ch2_xfrac,2)}', ls = (0, (5, 10)), linewidth=0.6)
 
 
     # ============================
-    # Sum of channels (no fit)
+    # Sum of channels
     # ============================
-    # plt.plot(both_channels["x axis"], both_channels["y axis"], ".-",
-    #          markersize=3, linewidth=1, color=Colors.CB_CYCLE[3],
-    #          label=f"Ch {channel1}+{channel2} Data")
-    # plt.errorbar(both_channels["x axis"], both_channels["y axis"],
-    #              yerr=both_channels["y error"], ls="none",
-    #              ecolor="k", elinewidth=1, capsize=2)
+    x_common = numpy.unique(numpy.concatenate((x_axis1, x_axis2)))
+
+    d1 = {x: (y,e) for x, y, e in zip(x_axis1, y_norm1, y_err_norm1)}
+    d2 = {x: (y,e) for x, y, e in zip(x_axis2, y_norm2, y_err_norm2)}
+
+    y_sum = numpy.zeros_like(x_common, dtype=float)
+    e_sum = numpy.zeros_like(x_common, dtype=float)
+
+    for i, x in enumerate(x_common):
+        y1, e1 = d1.get(x, (0,0))
+        y2, e2 = d2.get(x, (0,0))
+        y_sum[i] = y1 + y2
+        e_sum[i] = math.sqrt(e1**2 + e2**2)
+
+
+    # --- Plot Sum ---
+    plt.plot(x_common, y_sum, ".", markersize=3, linestyle="-", label=f"Ch {channel1} + Ch {channel2} Data", color=Colors.CB_CYCLE[2])
+    plt.errorbar(x_common, y_sum, yerr=e_sum, ls="none", ecolor="k", elinewidth=1, capsize=2)
+
 
     # ============================
     # Plot settings
