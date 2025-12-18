@@ -1,5 +1,5 @@
 # SCRIPT FOR TIMING ANALYSIS
-from config import Paths, Colors, Filters
+from config import Paths, Colors, Filters, PlotsConfig
 from data_manager import *
 import sqlite3
 import pandas
@@ -14,8 +14,9 @@ from matplotlib.backends.backend_pdf import PdfPages
 def plot_time_difference_t50(datafile):
     n_position, n_triggers, n_channels = query_dataset(datafile)
     time_difference = {}
+    active_channels = determine_active_channels(datafile)
     connection = sqlite3.connect(datafile)
-    for channel in range(1, n_channels + 1):
+    for channel in active_channels:
         time_difference[channel] = []
         data = pandas.read_sql(f"SELECT n_position,n_trigger,n_pulse,`t_50 (s)` FROM dataframe_table WHERE n_channel=={channel}", connection)
         data.set_index(['n_position','n_trigger','n_pulse'], inplace=True)
@@ -23,24 +24,53 @@ def plot_time_difference_t50(datafile):
         for i in range(n_position):
             for j in range(n_triggers):
                 time_diff = (time_data[i,j,2] - time_data[i,j,1]) * 1e9
+                if math.isnan(time_diff):
+                    continue
                 time_difference[channel].append(time_diff)
     connection.close()
-    connection.close()
-    fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(12,6))
-    for channel in (1,2):
-        bin_min = 97; bin_max = 101
-        bin_min = 98; bin_max = 100
+    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(10,5))
+    ax1, ax2 = axes.flatten()
+    subplots = (ax1, ax2)
+    plot = 0 
+    for channel in active_channels:
+        mu  = numpy.mean(time_difference[channel])
+        std = numpy.std(time_difference[channel], ddof=1)
+        print(f"mu = {mu}, std = {std}")
+        bin_min = PlotsConfig.TIME_DIFF_T50_BIN_MIN
+        bin_max = PlotsConfig.TIME_DIFF_T50_BIN_MAX
         custom_bins = numpy.linspace(bin_min, bin_max, 50 ,endpoint=True)
-        ax1.hist(time_difference[channel], bins=custom_bins, stacked=False ,histtype='step', edgecolor=Colors.CB_CYCLE[channel], lw=1, label=f"Channel {channel}", weights= (1 / len(time_difference[channel])) * numpy.ones(len(time_difference[channel])))
-        ax1.set_xlabel(r"Time (ns)")
-        ax1.set_ylabel(f"Frequency")
-        ax1.legend(loc = "best")
+        (n, bins, patches) = subplots[plot].hist(time_difference[channel], bins=custom_bins, density=True, stacked=False ,histtype='stepfilled', color=Colors.CB_CYCLE[plot], alpha = 0.5, lw=1, label=f"Data (${{\mu}}$ = {round(mu,2)}, ${{\sigma}}$ = {round(std,2)})")
 
-    for channel in (3,4):
-        ax2.hist(time_difference[channel], bins=100, stacked=False ,histtype='step', edgecolor=Colors.CB_CYCLE[channel], lw=1, label=f"Channel {channel}", weights= (1 / len(time_difference[channel])) * numpy.ones(len(time_difference[channel])))
-        ax2.set_xlabel(r"Time (ns)")
-        ax2.set_ylabel(f"Frequency")
-        ax2.legend(loc = "best")
+        bin_centers = (bins[:-1] + bins[1:]) / 2
+        
+        (muf, stdf), covf = curve_fit(gaussian, bin_centers, n, maxfev=10000, p0=[mu, std])
+
+        fit_x_axis = numpy.linspace(min(bin_centers), max(bin_centers), 200, endpoint=True)
+        fit_y_axis = gaussian(fit_x_axis, muf, stdf)
+
+        subplots[plot].set_xlim(bin_min, bin_max)
+        subplots[plot].plot(fit_x_axis, fit_y_axis, "r", label="Gaussian fit")
+
+        subplots[plot].axvline(
+            x=Filters.TIME_DIFF_MIN,
+            color='blue',
+            linestyle='--',
+            label='Min Time Difference'
+        )
+        subplots[plot].axvline(
+            x=Filters.TIME_DIFF_MAX,
+            color='green',
+            linestyle='--',
+            label='Max Time Difference'
+        )
+
+        subplots[plot].set_xlabel("Time difference (ns)")
+        subplots[plot].set_ylabel("Probability density")
+        subplots[plot].legend(loc="upper left")
+
+        plot += 1
+
+
     fig.suptitle(f'Time Difference (t_50)')
     plt.show()
     return None

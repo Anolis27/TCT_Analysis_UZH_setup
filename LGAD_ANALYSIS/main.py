@@ -18,43 +18,47 @@ def main():
 
     ####### DEBUGGING #######
     # active_channels = determine_active_channels(Paths.DATAFILE)
-    # print(f"Active channels: {active_channels}")                     # WORKING
-    #plot_pad_positions(Paths.DATAFILE, Paths.POSITIONS)              # WORKING
-    #plot_pad_position_everything()                             # WORKING
-    #plot_sensor_strip_positions(Paths.DATAFILE, Paths.POSITIONS)  # WORKING
+    # print(f"Active channels: {active_channels}")                   
+    #plot_pad_positions(Paths.DATAFILE, Paths.POSITIONS)           
+    #plot_pad_position_everything()                           
+    #plot_sensor_strip_positions(Paths.DATAFILE, Paths.POSITIONS)
     #########################
 
+    ####### FILTER CONFIG ######                     
+    #plot_amplitude_against_t_peak(Paths.DATAFILE, time_variable = "t_90 (s)") 
+    #plot_amplitude(Paths.DATAFILE)
+    #plot_time_difference_t50(Paths.DATAFILE)
+    ############################
+
     ####### AMPLITUDE ANALYSIS #######
-    #plot_amplitude_everything()                                      # WORKING
-    #plot_saved_results("Amplitude")                                   # WORKING
-    #plot_2d_amplitude(Paths.DATAFILE, Paths.POSITIONS)              # WORKING  
-    #plot_amplitude_along_y_axis(Paths.DATAFILE, Paths.POSITIONS)     # WORKING
-    #plot_noise(Paths.DATAFILE)                                      # WORKING
-    #plot_amplitude_against_t_peak(Paths.DATAFILE, time_variable = "t_90 (s)")  # WORKING
-    #plot_amplitude(Paths.DATAFILE)                              # NOT WORKING
+    #plot_noise(Paths.DATAFILE)  
+    #plot_amplitude_everything()                                 
+    #plot_saved_results("Amplitude")                               
+    #plot_2d_amplitude(Paths.DATAFILE, Paths.POSITIONS)             
+    #plot_amplitude_along_y_axis(Paths.DATAFILE, Paths.POSITIONS)  
     ##################################
 
     ####### CHARGE COLLECTION ANALYSIS #######
-    #plot_collected_charge_everything()                              # WORKING
-    #plot_saved_results("Collected_charge")                            # WORKING
-    #plot_2d_charge(Paths.DATAFILE, Paths.POSITIONS)                 # WORKING   
-    #plot_collected_charge(Paths.DATAFILE)                            # WORKING
+    #plot_collected_charge_everything()                          
+    #plot_saved_results("Collected_charge")                       
+    #plot_2d_charge(Paths.DATAFILE, Paths.POSITIONS)               
+    #plot_collected_charge(Paths.DATAFILE)                         
     ##########################################
 
     #plot_2d_amplitude_charge_everything()
 
     ####### TIMING ANALYSIS #######
-    #plot_time_resolution_everything()                             # WORKING
-    #plot_saved_results("Timing")                                   # WORKING
-    #plot_2d_timing(Paths.DATAFILE, Paths.POSITIONS)                # WORKING  
-    #plot_2d_timing_everything()                                   # WORKING
+    #plot_time_resolution_everything()                       
+    #plot_saved_results("Timing")                               
+    #plot_2d_timing(Paths.DATAFILE, Paths.POSITIONS)                
+    #plot_2d_timing_everything() 
     ###############################
 
     ####### INTERPAD ANALYSIS #######
-    #plot_interpad_distance_against_bias_voltage_v2()               # WORKING
-    #plot_saved_results("Interpad_distance")                        # WORKING
-    #plot_time_resolution_interpad_region_everything()                # WORKING
-    #plot_saved_results("Timing_interpad_region")                     # WORKING
+    #plot_interpad_distance_against_bias_voltage_v2()            
+    #plot_saved_results("Interpad_distance")                      
+    #plot_time_resolution_interpad_region_everything()               
+    #plot_saved_results("Timing_interpad_region")                     
     #################################
 
     ######## save data processing #######

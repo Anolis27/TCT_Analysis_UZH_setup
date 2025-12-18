@@ -1,0 +1,109 @@
+\chapter{Analysis program for TCT measurments}
+\label{chap2}
+
+This section describes the development of a Python program for the data analysis of the TCT setup at UZH, starting from an initial script written by ................. The current state of the project can be found on the \href{https://github.com/Anolis27/TCT_Analysis_UZH_setup}{following GitHub repository}. The program was developed and optimized to analyse TCT measurements on Ti-LGADs, but a version of the initial code has also been adapted to analyse TCT data on CASSIA sensors. Furthermore, some parts of the code can be reused for the analysis of TCT measurements on other types of sensors.
+
+\begin{figure}[h!]
+  \centering
+  \resizebox{0.9\textwidth}{!}{%
+    \begin{forest}
+      for tree={
+        font=\ttfamily,
+        grow'=0,
+        child anchor=west,
+        parent anchor=south,
+        anchor=west,
+        calign=first,
+        edge path={
+          \noexpand\path [draw, \forestoption{edge}] (!u.parent anchor) |- (.child anchor)\forestoption{edge label};
+        },
+        before typesetting nodes={
+          if n=1
+            {insert before={[,phantom]}}
+            {}
+        },
+      }
+      [TCT$\_$Analysis$\_$UZH$\_$setup/
+        [.gitignore]
+        [README.md]
+        [CASSIA$\_$ANALYSIS/
+          [Analysis$\_$Cassia$\_$1ch.py]
+          [README$\_$CASSIA.txt]
+        ]
+        [LGAD$\_$ANALYSIS/
+          [Analysis$\_$2.tex]
+          [amplitude.py]
+          [charge$\_$collection.py]
+          [config.py]
+          [data$\_$manager.py]
+          [interpad.py]
+          [main.py]
+          [plot$\_$2D$\_$maps.py]
+          [plot$\_$saved$\_$results.py]
+          [timing.py]
+        ]
+      ]
+    \end{forest}
+  }
+  \caption{Structure of the GitHub repository for the TCT analysis program developed at UZH.}
+  \label{fig:repo_structure}
+\end{figure}
+
+\section{Structure of the GitHub repository}
+
+The structure of the GitHub repository is shown in the diagram bshown on Figure \ref{fig:repo_structure}. The repository contains two main folders: \texttt{CASSIA\_ANALYSIS} and \texttt{LGAD\_ANALYSIS}, which contain the analysis scripts for CASSIA sensors and Ti-LGADs, respectively. The main contribution to this project is the development of the \texttt{LGAD\_ANALYSIS} folder, which includes various Python scripts for different aspects of the TCT data analysis. 
+
+
+\section{Description of the Ti-LGAD analysis program}
+
+This section provides a detailed description of the usage of the Ti-LGAD analysis program. The main script of the program is \texttt{main.py}, which serves as the entry point for the analysis. The program is designed to be modular, with different scripts handling specific tasks such as amplitude analysis, charge collection analysis, timing analysis, and plotting of results. The different parameters for the analysis can be configured in the \texttt{config.py} file. The other scripts contain the functions, often heavily centred on the Ti-LGAD measurment, needed to perform the analysis. 
+
+The software of the setup at UZH outputs a folder with multiple subfolders, containing the data files needed for the analysis, but only a few of these files are needed for the analysis. The \texttt{positions.pickle}, \texttt{measured$\_$data.sqlite} and \texttt{parsed$\_$from$\_$waveforms.sqlite} files has to be added in a folder following the same structure as \newline \texttt{LGAD$\_$ANALYSIS/Data/SensorName/BiasVoltage/}. % (e.g. \texttt{LGAD$\_$ANALYSIS/Data/W5$\_$V1$\_$TW5/100V/}).
+
+\begin{figure}[h!]
+    \centering
+    \begin{subfigure}[t]{0.45\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/chap2/TI_LGAD_sample.png}
+        \caption{Microscope image of a Ti-LGAD sample with the opening in the metalisation for the TCT measurement.}
+        \label{fig:TI_LGAD_sample}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.5\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/chap2/2d_collected_charge.png}
+        \caption{2D plot of the collected charge in the area of the opening in the metalisation.}
+        \label{fig:2d_collected_charge}
+    \end{subfigure}
+    \caption{Wirebonding between the two sensors of a phase-0 module. Each pair of strips corresponds to a number printed on the edge ring.}
+    \label{fig:data_acquisition}
+\end{figure}
+
+The program has been developped for area scans around the opening of the metalisation of the Ti-LGADs samples, as shown on Figure \ref{fig:data_acquisition}. The typical config for the data acquisition is:
+\begin{itemize}
+  \item step = 5e-6
+  \item X SPAN = 100e-6
+  \item Y SPAN = 300e-6
+  \item LASER DAC = 500
+  \item N TRIGGERS = 100
+  \item Save Waveforms = False
+\end{itemize}
+
+It is important to notice that the x and y axis are usually inverted in the code. This was originating from the initial script written by ......... and kept for the rest of the developpement of the code. 
+
+\subsection{\texttt{main.py}}
+
+The \texttt{main.py} file contains the main functions used to run the analysis. Depending on the analysis the user wants to perform, the required functions must be uncommented. The different functions are grouped according to the type of analysis: amplitude analysis, charge collection analysis, timing analysis, or interpad region analysis. Two additional sections are also dedicated to debugging and the configuration of the parameterers for the noise filter.
+
+\subsection{\texttt{config.py}}
+
+This python file contains the main parameters to run the analysis. It is composed of differents classes: Paths, Filters, InterpadConfig, Subplots, PlotsConfig, and Colors. The following subsections will fivea brif word on these classes. 
+
+\subsubsection{\texttt{Paths}}
+This class is where you indicate the paths of the data the user want to analyse or the paths of the output folders. 
+\texttt{DATA$\_$ROOT} is the path of the \texttt{Data} folder and need to be adapted depending where the user is doiong the analysis on his computer. 
+\texttt{PREFERRED$\_$BASE$\_$DIR} is the paths of the data of a precise measurement the user wants to analyse. This is required for all the functions requireing \texttt{DATAFILE} (the \texttt{parsed$\_$from$\_$waveforms.sqlite}) and/or \texttt{POSITIONS} (the \texttt{positions.pickle} file) as argument.
+The rest of thius class defines a method to find automaticaly the \texttt{BASE$\_$DIR} if the \texttt{PREFERRED$\_$BASE$\_$DIR} does not reffers to an existing folder. This method is used at the beginning of the \texttt{main()} function.
+
+\subsubsection{\texttt{Filters}}
+This class is used to define the different thresholds to cut the noise and select the actual data. These values can be chosen by visualising them with the functions \texttt{plot$\_$amplitude()} and \texttt{plot$\_$amplitude$\_$against$\_$t$\_$peak()}. 

@@ -64,6 +64,9 @@ class Subplots:
 class PlotsConfig:
     AMPLITUDE_V_MAX = 0
     CHARGE_COLLECTION_V_MAX = 0
+    TIME_DIFF_T50_N_BINS = 50
+    TIME_DIFF_T50_BIN_MIN = 97
+    TIME_DIFF_T50_BIN_MAX = 101
 
 class Colors:
     CB_CYCLE = [

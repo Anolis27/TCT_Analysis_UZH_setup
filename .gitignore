@@ -28,8 +28,21 @@ LGAD_ANALYSIS/saved_results/**
 CASSIA_ANALYSIS/Data/
 CASSIA_ANALYSIS/Data/**
 
-# BUT ignore its Data subfolder
-LGAD_ANALYSIS/Data/
-LGAD_ANALYSIS/Data/**
-CASSIA_ANALYSIS/Data/
-CASSIA_ANALYSIS/Data/**
+# report tex
+!report/
+report/**
+report/.vscode
+!report/images/
+!report/images/**
+!report/main.tex
+!report/0d intro.tex
+!report/1 chapter 1.tex
+!report/2 chapter 2.tex
+!report/3 chapter 3.tex
+!report/appendix.tex
+!report/conclusion.tex
+!report/logo_ULB2.pdf
+!report/PageDeGarde.tex
+!report/preamble.sty
+!report/references.bib
+!report/uzh-logo-black.png

@@ -1,0 +1,49 @@
+\chapter{Introduction}
+%\addcontentsline{toc}{chapter}{Introduction}
+
+High-enrgy physiscs experiments at colliders rely heavilily on precise tracking detectors to reconstruct the trakcs of charged particles produced in high energy collisions. The LHC experiments at CERN consititute the most relevant example of this dependance on tracking devices. The High Luminosity LHC (HL-LHC) and future colliders, will further increase the demands on tracking capabilities, due to higher collisions rates and radiation levels. 
+
+Low-Gain Avalanche Detectors (LGADs) have emerged as a promising technology in terms of temporal resolution, but also in terms of radiation hardness. Their ability to provide precise timing information, in addition to spatial measurements, makes them particularly suitable for 4D tracking applications in high-energy physics experiments. Unfortunately, these detectors suffer from a limited spatial resilution, known as \textit{the fill-factor problem}. Further technological development has led to the introduction of Trench-Isolated LGADs (Ti-LGADs), which aim to address this limitation by incorporating trench structures to improve spatial resolution while maintaining the timing performance of traditional LGADs. This work focuses on the characterization of the performance of Ti-LGADs samples from the AIDAinnova production campaign, produced at FBK with differnent trench designs. This was done using a Transient Current Technique (TCT) setup with an infrared laser, allowing to study the impact of the trench structures on the detectors' performance. A relevant part of this work was dedicated to the impovement, optimisation and developpement of a python program used to analyse the TCT data at the Physik-Institut at University of Zurich (UZH).
+
+\section{Silicon Detectors in High-Energy Physics}
+
+Silicon is a widely used material in gigh-energy physics experiments due to its semiconductor properties and its radiation hardness. This section provides a brief description of the operating principle of silicon radiation sensors, as well as a description of LGADs and Ti-LGADs technologies.
+
+Figure \ref{fig:PIN_principle} shows a simplified schematic representation of the cross section of a planar silicon sensor. It represents a p-in-n (PIN) diode, composed of a p type substrate with a n-type implant on the top surface and a p++ implant on the back side, forming a p-n junction. The sensor is typically reverse biased until full depletion is reached, meaning that the electric field extends throughout the entire active thickness of the sensor.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.7\textwidth]{images/Intro/PIN_principle.png}
+    \caption{Simplified schematic representation of the cross section of a planar silicon sensor, taken from \cite{senger_development_2024}}
+    \label{fig:PIN_principle}
+\end{figure}
+
+When a high energy charged particle traverses the sensor, the impinging particle transfers a fraction of its kinetic energy to the silicon atoms trough succesive electromagnetic interactions, and leading to electron hole pair creation. The electric field present in the sensor causes the generated electrons and holes to drift towards their respective electrodes (holes to the p++ back implant and electrons to the n++ top implant). If a low impedance AC circuit is connected to the sensor electrodes, the movement of the charge carriers induces a current in the external circuit, which can then be measured.
+
+%The average energy transferred from the particle to the medium is known as the mass stopping power $\left\langle \frac{dE}{dx} \right\rangle$, 
+
+%Silicon is also a widely used material in electronics, and the production process on silicon wafers is a well mastered technology. 
+
+\subsection{Time resolution}
+
+The time resolution ($\sigma_t$) of a detector is a measure of its ability to accurately determine the time of arrival of a particle. Time measurments 
+
+\subsection{Low-Gain Avalanche Detectors (LGADs)}
+
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.65\textwidth]{images/Intro/LGAD_device.png}
+    \caption{Simplified schematic representation of the cross section of a planar silicon LGAD sensor, taken from \cite{senger_development_2024}}
+    \label{fig:LGAD_principle}
+\end{figure}
+
+\subsection{Ti-LGADs}
+
+\subsection{Efficiency}
+
+\subsection{Time resolution}
+
+\section{Transient Current Technique (TCT)}
+
+\subsection{TCT Setup at UZH}

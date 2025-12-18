@@ -1,0 +1,65 @@
+%Template for Buface Master Thesis with ULB autorisation form.
+%Made by Oscar Van Slijpe, 2023
+%Using the BrufaceTitlepageStyle from Stijn Bettens and Adam Cooman, 2014
+
+\documentclass[a4paper,12pt]{report}
+\usepackage{preamble}
+
+\author{Beghuin, Mathias}
+\title{TCT measurements and analysis on Ti-LGADs at UZH}
+
+% Promotor, co-promotor, advisors, 
+\promotor{ Pr.Dr. Nicolas Pauly}
+\advisors{Dr. Yannick Allard \\Pr.Dr. Pascal Vanlaer}
+\reason{Physics Engineering}
+\AcademicYear{2024-2025}
+
+
+\begin{document}
+\frontmatter
+
+% Title page
+%\maketitlepage 
+\include{PageDeGarde}
+\newgeometry{a4paper, margin=2.5cm}
+%\include{0a autorisation}
+
+%\include{0b abstract}
+
+%\include{0c acronyms}
+
+
+\setcounter{tocdepth}{2}
+\tableofcontents
+
+\newpage
+%reset the page counter and use numerical index
+\mainmatter
+
+
+
+\include{0d intro}
+
+\include{1 chapter 1}
+
+\include{2 chapter 2}
+
+%\include{3 chapter 3}
+
+
+%\include{conclusion}
+
+%\include{ia}
+
+%reset the page counter and use alphabet index
+\backmatter
+
+
+\addcontentsline{toc}{chapter}{Bibliography}
+\printbibliography
+
+
+%\include{appendix}  
+
+
+\end{document}
