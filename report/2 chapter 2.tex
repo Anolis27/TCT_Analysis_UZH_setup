@@ -97,7 +97,7 @@ The \texttt{main.py} file contains the main functions used to run the analysis. 
 
 \subsection{\texttt{config.py}}
 
-This python file contains the main parameters to run the analysis. It is composed of differents classes: Paths, Filters, InterpadConfig, Subplots, PlotsConfig, and Colors. The following subsections will fivea brif word on these classes. 
+This python file contains the main parameters to run the analysis. It is composed of differents classes: Paths, Filters, InterpadConfig, Subplots, PlotsConfig, and Colors. The following subsections will give a brief word on these classes. 
 
 \subsubsection{\texttt{Paths}}
 This class is where you indicate the paths of the data the user want to analyse or the paths of the output folders. 
@@ -106,4 +106,9 @@ This class is where you indicate the paths of the data the user want to analyse 
 The rest of thius class defines a method to find automaticaly the \texttt{BASE$\_$DIR} if the \texttt{PREFERRED$\_$BASE$\_$DIR} does not reffers to an existing folder. This method is used at the beginning of the \texttt{main()} function.
 
 \subsubsection{\texttt{Filters}}
-This class is used to define the different thresholds to cut the noise and select the actual data. These values can be chosen by visualising them with the functions \texttt{plot$\_$amplitude()} and \texttt{plot$\_$amplitude$\_$against$\_$t$\_$peak()}. 
+This class is used to define the different thresholds to cut off the noise and select the actual data. These values can be chosen by visualising them with the functions \texttt{plot$\_$amplitude()}, \texttt{plot$\_$amplitude$\_$against$\_$t$\_$peak()} and \texttt{plot$\_$time$\_$difference$\_$t50()}. 
+
+\subsection{\texttt{InterpadConfig}}
+This class defines the different parameters used for the analysis in the interpad region. The x interval on the 2D plot like the one given in Figure \ref{fig:2d_collected_charge} defining the interpad region is given by the parameters \texttt{INTERPAD$\_$MIN} and \texttt{INTERPAD$\_$MAX}. The stepsize used during the measurement must also be given here. The y position where it is considered as the middle of the opening has also to be given.
+
+% WORD IF 
