@@ -1,0 +1,89 @@
+%\documentclass[a4paper, 12pt]{report}
+
+%\usepackage[utf8]{inputenc}
+% \usepackage{color}
+% \usepackage[top=2.5cm, bottom=1.5cm, left=2.5cm, right=1cm]{geometry}
+% \usepackage[pdftex]{graphicx}
+% \usepackage{tikz}
+
+% Logos
+\newcommand{\ulb}{\includegraphics[scale=1.1]{logo_ULB2.pdf}}
+\newcommand{\polytech}{\includegraphics[scale=0.6]{uzh-logo-black.png}}
+
+% Polices
+\definecolor{ULBblue}{rgb}{0,0.2196,0.5765}
+\newcommand{\fontTitle}{\sffamily \Huge\selectfont \color{ULBblue}}
+\newcommand{\fontSubtitle}{\sffamily \LARGE \selectfont \color{ULBblue}}
+\newcommand{\fontText}{\sffamily \selectfont}
+\newcommand{\fontColor}{\sffamily \selectfont \color{ULBblue}}
+
+% Titre
+\newcommand{\titleA}{\fontTitle{TCT Measurements and Analysis}} % Titre identique au titre remis au secrétariat
+\newcommand{\titleB}{\fontTitle{on Trench-Isolated Low-Gain}} % (dans la langue de rédaction a priori)
+\newcommand{\titleC}{\fontTitle{Avalanche Detectors (Ti-LGADs)}} % (dans la langue de rédaction a priori)
+% Sous-titre
+%\newcommand{\subtitle}{\fontSubtitle{Ligne du sous-titre du mémoire}}
+% Titre du diplôme
+\newcommand{\diplomaA}{\fontText{Internship at UZH}} % A laisser en Français
+\newcommand{\diplomaB}{\fontText{}}
+
+% Etudiant
+\newcommand{\student}{\textbf{\sffamily \large Ir. Mathias Beghuin}}
+
+% Supervision
+\newcommand{\promAa}{\fontColor{}}
+\newcommand{\promAb}{\fontText{}}
+\newcommand{\promBa}{\fontColor{Under the supervision of}}
+\newcommand{\promBb}{\fontText{Pr.Dr. Anna Macchiolo}}
+\newcommand{\promCb}{\fontText{Pr.Dr. Pascal Vanlaer}}
+\newcommand{\deptA}{\fontColor{Under the effective supervision of}}
+\newcommand{\deptB}{\fontText{Dr. Leena Diehl}}
+
+% Année académique
+\newcommand{\yearA}{\fontColor{Academic year}}
+\newcommand{\yearB}{\fontText{2025 - 2026}}
+
+%\begin{document}
+
+	\thispagestyle{empty}
+	\newgeometry{top=2.5cm, bottom=1.5cm, left=2.5cm, right=1cm}
+	\setlength{\unitlength}{1mm}
+	\noindent\begin{picture}(175,257)
+	
+		\put(0,245){\polytech}
+		\put(153,139.5){\ulb}
+		
+		\put(8,155){\makebox(150,10)[l]{\titleA}}
+		\put(8,145){\makebox(150,10)[l]{\titleB}}
+		\put(8,135){\makebox(150,10)[l]{\titleC}}
+%		\put(8,135){\makebox(150,10)[l]{\subtitle}}
+		
+		\put(0,75){
+		\begin{tikzpicture}[scale=0.1]
+		\fill [fill=ULBblue](0,0) rectangle (0.8,90);
+		\fill [fill=ULBblue](0,57) rectangle (152,57.8);
+		\end{tikzpicture}}
+		
+		\put(8,120){\makebox(150,5)[l]{\diplomaA}}
+		\put(8,115){\makebox(150,5)[l]{\diplomaB}}
+		
+		\put(8,75){\makebox(150,10)[l]{\selectfont \student}}
+		
+		\put(8,32){\makebox(80,5)[l]{\promAa}}
+		\put(8,27){\makebox(80,5)[l]{\promAb}}
+		\put(8,21){\makebox(80,5)[l]{\promBa}} % Commenter la ligne si pas nécessaire
+		\put(8,16){\makebox(80,5)[l]{\promBb}} % Commenter la ligne si pas nécessaire
+%		\put(8,18){\makebox(80,5)[l]{\promCa}} % Commenter la ligne si pas nécessaire
+		\put(8,11){\makebox(80,5)[l]{\promCb}} % Commenter la ligne si pas nécessaire
+		\put(8,5){\makebox(80,5)[l]{\deptA}}
+		\put(8,0){\makebox(80,5)[l]{\deptB}}
+		
+		\put(145,5){\makebox(30,5)[r]{\yearA}}
+		\put(145,0){\makebox(30,5)[r]{\yearB}}
+	
+	\end{picture}
+	\restoregeometry
+
+%\end{document}
+
+% Template conçu par Benjamin Vanhemelryck et revu par François Bronchart - Mai 2013

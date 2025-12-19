@@ -22,23 +22,33 @@ import PyPDF2
 
 # from natsort import natsorted
 
-CB_color_cycle = ['#377eb8', '#ff7f00', '#4daf4a', '#f781bf', '#a65628', '#984ea3', '#999999', '#e41a1c', '#dede00'] #color blind friendly colors
+CB_color_cycle = [
+    '#377eb8', '#ff7f00', '#4daf4a', '#f781bf', '#a65628',
+    '#984ea3', '#999999', '#e41a1c', '#dede00',
+    '#56B4E9', 
+    '#E69F00', 
+    '#009E73', 
+    '#F0E442', 
+    '#0072B2', 
+    '#CC79A7'  
+]
 colors = ["Red","Green","Blue","Yellow","Cyan","Magenta","Orange","Purple","Pink","Brown","Black","White","Gray","DarkRed","DarkGreen","DarkBlue","LightGray","LightGreen","LightBlue","LightCoral"]
 
 ######## FILES AND DIRECTORIES ########
-test_directory = os.path.expanduser("C:/Users/mathi/Documents/UZH/Data/V1_TW5/100V")
+test_directory = os.path.expanduser("C:/Users/mathi/Documents/UZH/LGAD_ANALYSIS/Data/V2_TW5/50V")
 test_datafile  = os.path.abspath(f"{test_directory}/parsed_from_waveforms.sqlite")
 test_datafile2 = os.path.abspath(f"{test_directory}/measured_data.sqlite")
 test_positions = os.path.abspath(f"{test_directory}/positions.pickle")
 
 ######## FILTERS GLOBAL PARAMETERS ########
-AMPLITUDE_THRESHOLD = -0.07  # V
-TIME_DIFF_MIN = 98         # s
-TIME_DIFF_MAX = 99.5       # s
-PEAK_TIME_MIN = 4.5       # s
-PEAK_TIME_MAX = 6.5       # s
-INTERPAD_REGION_MIN = -75         # um
-INTERPAD_REGION_MAX = 75        # um
+AMPLITUDE_THRESHOLD = -0.08  # V -0.07
+TIME_DIFF_MIN = 98         # ns 98
+TIME_DIFF_MAX = 99.5       # ns 99.5
+PEAK_TIME_MIN = 4.5       # ns 4.5
+PEAK_TIME_MAX = 6.5       # ns 6.5
+INTERPAD_REGION_MIN = -125         # um -75
+INTERPAD_REGION_MAX = 125
+        # um 75
 ###########################################
 
 def sigmoid(x, x0, b, L, k):
@@ -52,10 +62,11 @@ def query_dataset(datafile):
     #print(f"Querying dataset...")
     global n_position; global n_triggers; global n_channels
     connection = sqlite3.connect(datafile)
-    query = "SELECT n_position FROM dataframe_table WHERE n_trigger = 0 and n_pulse = 1 and n_channel = 1"
+    (chan1, chan2) = determine_active_channels(datafile)
+    query = f"SELECT n_position FROM dataframe_table WHERE n_trigger = 0 and n_pulse = 1 and n_channel = {chan1}"
     filtered_data = pandas.read_sql_query(query, connection)
     n_position = len(filtered_data)
-    query = "SELECT n_trigger FROM dataframe_table WHERE n_position = 0 and n_pulse = 1 and n_channel = 1"
+    query = f"SELECT n_trigger FROM dataframe_table WHERE n_position = 0 and n_pulse = 1 and n_channel = {chan1}"
     filtered_data = pandas.read_sql_query(query, connection)
     n_triggers = len(filtered_data)
     query = "SELECT n_channel FROM dataframe_table WHERE n_position = 0 and n_pulse = 1 and n_trigger = 0"
@@ -125,7 +136,7 @@ def get_channel_amplitude(datafile, channel, pulse_no = 1):
     return amplitudes
 
 # Hardcoded to return channels 1 and 2 for now
-def determine_active_channels(datafile):
+# def determine_active_channels(datafile):
 ##    query_dataset(datafile)
 ##    result = {}; list_to_sort = []
 ##    for channel in range(1, n_channels + 1):
@@ -134,7 +145,36 @@ def determine_active_channels(datafile):
 ##        list_to_sort.append(round(sum(amplitudes),3))
 ##        list_to_sort = sorted(list_to_sort)
 ##    return tuple(sorted((result[list_to_sort[0]], result[list_to_sort[1]])))
-    return (1,2)
+    # return (3,4)
+
+def determine_active_channels(datafile):
+    connection = sqlite3.connect(datafile)
+    query = "SELECT n_channel, `Amplitude (V)` FROM dataframe_table"
+    df = pandas.read_sql_query(query, connection)
+    connection.close()
+    if df.empty:
+        return ()
+    df["AmpAbs"] = df["Amplitude (V)"].abs()
+    pairs = {
+        (1, 2): None,
+        (3, 4): None,
+    }
+    mean_values = {}
+
+    for pair in pairs:
+        chA, chB = pair
+
+        df_pair = df[df["n_channel"].isin(pair)]
+
+        if df_pair.empty:
+            mean_values[pair] = 0
+        else:
+            mean_values[pair] = df_pair["AmpAbs"].mean()
+    # chose the pair with the highest mean amplitude
+    best_pair = max(mean_values, key=mean_values.get)
+    if mean_values[best_pair] == 0:
+        return ()
+    return best_pair
 
 def plot_amplitude(datafile, positions):
     query_dataset(datafile)
@@ -366,7 +406,7 @@ def plot_amplitude_of_one_pad(datafile, channel, pad_positions):
 
 def plot_amplitude_everything(directory_in_str = "Data/"):
     final_plot = {} # {sensor: channel: ([voltages], [mean amplitude], [std amplitude (error)])}
-    with PdfPages(f"Output.pdf") as pdf:
+    with PdfPages(f"amplitude.pdf") as pdf:
         directory = os.fsencode(directory_in_str)
         for file in os.listdir(directory):
             filename = os.fsdecode(file)
@@ -505,7 +545,7 @@ def plot_collected_charge_of_one_pad(datafile, channel, pad_positions):
 
 def plot_collected_charge_everything(directory_in_str = "Data/"):
     final_plot = {} # {sensor: channel: ([voltages], [mean amplitude], [std amplitude (error)])}
-    with PdfPages(f"Output2.pdf") as pdf:
+    with PdfPages(f"collected_charge.pdf") as pdf:
         directory = os.fsencode(directory_in_str)
         for file in os.listdir(directory):
             filename = os.fsdecode(file)
@@ -646,7 +686,7 @@ def plot_time_resolution_of_one_pad(datafile, channel, pad_positions):
 
 def plot_time_resolution_everything(directory_in_str = "Data/"):
     final_plot = {} # {sensor: channel: ([voltages], [mean amplitude], [std amplitude (error)])}
-    with PdfPages(f"Output3.pdf") as pdf:
+    with PdfPages(f"time_resolution.pdf") as pdf:
         directory = os.fsencode(directory_in_str)
         for file in os.listdir(directory):
             filename = os.fsdecode(file)
@@ -865,15 +905,19 @@ def get_pad_positions(datafile, positions, channel):
     # filter out the meaningfull amplitudes
     for i in range(n_position):
         result = []
+        #print(f"n_position: {i}")
         for j in range(n_triggers):
             amplitude = amplitude_data[i,j,1]
             if math.isnan(amplitude) or amplitude > AMPLITUDE_THRESHOLD:
+                #print(f"amplitude: {amplitude}")
                 continue
             time_diff = (t_50_data[i,j,2] - t_50_data[i,j,1]) * 1e9
             if time_diff < TIME_DIFF_MIN or time_diff > TIME_DIFF_MAX:
+                #print(f"time diff: {time_diff}")
                 continue
             peak_time = (t_90_data[i,j,1] + 0.5 * time_over_90_data[i,j,1]) * 1e9
             if peak_time < PEAK_TIME_MIN or peak_time > PEAK_TIME_MAX:
+                #print(f"peak time: {peak_time}")
                 continue
             result.append(amplitude)
         if result == []:
@@ -891,13 +935,14 @@ def get_pad_positions(datafile, positions, channel):
     # return indices (n_position) where amplitude is non-zero (above numerical noise)
     mask = data_frame['z'].abs() > 1e-6
     pad_position = data_frame.index[mask].tolist()
+    # pad_position = data_frame.index.tolist()
     if not pad_position:
         print(f"[Channel {channel}] No non-zero amplitudes found -> no pad positions")
     return pad_position
 
 def plot_pad_positions(datafile, positions):
     query_dataset(datafile)
-    x, y = get_positions(positions)  # lists of positions in µm
+    (x, y) = get_positions(positions)  # lists of positions in µm
     (active_channel_1, active_channel_2) = determine_active_channels(datafile)
     pad_positions_1 = get_pad_positions(datafile, positions, active_channel_1)
     pad_positions_2 = get_pad_positions(datafile, positions, active_channel_2)
@@ -1248,11 +1293,11 @@ def get_interpad_distance(datafile, positions, channel1, sensor_strip_positions1
     fit_norm = sigmoid(fine_x, *popt)
 
     # --- Plot Ch 1 ---
-    plt.plot(fine_x, fit_norm, "-", label="Ch 1 Fit", color=CB_color_cycle[0])
-    plt.plot(x_axis, y_norm, ".", markersize=3, label="Ch 1 Data", color=CB_color_cycle[0])
+    plt.plot(fine_x, fit_norm, "-", label=f"Ch {channel1} Fit", color=CB_color_cycle[0])
+    plt.plot(x_axis, y_norm, ".", markersize=3, label=f"Ch {channel1} Data", color=CB_color_cycle[0])
     plt.errorbar(x_axis, y_norm, yerr=y_err_norm, ls="none", ecolor="k",
                  elinewidth=1, capsize=2)
-    plt.axvline(x=ch1_x0, ymin=0, ymax=1, color='k', label=f'x = {round(ch1_x0,2)}', ls = (0, (5, 10)), linewidth=0.6)
+    plt.axvline(x=ch1_x0, ymin=0, ymax=1, color='k', label=f'x{channel1} = {round(ch1_x0,2)}', ls = (0, (5, 10)), linewidth=0.6)
 
     # ============================
     # Channel 2
@@ -1281,11 +1326,11 @@ def get_interpad_distance(datafile, positions, channel1, sensor_strip_positions1
     fit_norm = sigmoid(fine_x, *popt)
 
     # --- Plot Ch 2 ---
-    plt.plot(fine_x, fit_norm, "-", label="Ch 2 Fit", color=CB_color_cycle[1])
-    plt.plot(x_axis, y_norm, ".", markersize=3, label="Ch 2 Data", color=CB_color_cycle[1])
+    plt.plot(fine_x, fit_norm, "-", label=f"Ch {channel2} Fit", color=CB_color_cycle[1])
+    plt.plot(x_axis, y_norm, ".", markersize=3, label=f"Ch {channel2} Data", color=CB_color_cycle[1])
     plt.errorbar(x_axis, y_norm, yerr=y_err_norm, ls="none", ecolor="k",
                  elinewidth=1, capsize=2)
-    plt.axvline(x=ch2_x0, ymin=0, ymax=1, color='k', label=f'x = {round(ch2_x0,2)}', ls = (0, (5, 10)), linewidth=0.6)
+    plt.axvline(x=ch2_x0, ymin=0, ymax=1, color='k', label=f'x{channel2} = {round(ch2_x0,2)}', ls = (0, (5, 10)), linewidth=0.6)
 
 
     # ============================
@@ -1312,14 +1357,14 @@ def get_interpad_distance(datafile, positions, channel1, sensor_strip_positions1
     # ============================
     # Return interpad distance
     # ============================
-    return (ch1_x0 - ch2_x0, ch1_x0_uncertainty + ch2_x0_uncertainty)
+    return (abs(ch1_x0 - ch2_x0), ch1_x0_uncertainty + ch2_x0_uncertainty)
 
 
 
 def plot_interpad_distance_against_bias_voltage_v2(directory_in_str = "Data/"):
     result = {}
     # Open a PDF file to save all plots
-    with PdfPages('Test.pdf') as pdf:
+    with PdfPages('interpad_distance.pdf') as pdf:
         directory = os.fsencode(directory_in_str)
         # file processing
         for file in os.listdir(directory):
@@ -1538,7 +1583,7 @@ def plot_time_resolution_interpad_region(datafile, positions, pdf):
 def plot_time_resolution_interpad_region_everything(directory_in_str = "Data/"):
     # Open a PDF file to save all plots
     final_plot = {}
-    with PdfPages('Time_Resolution_Interpad_Region_Everything.pdf') as pdf:
+    with PdfPages('timing_interpad_region.pdf') as pdf:
         directory = os.fsencode(directory_in_str)
         # file processing
         for file in os.listdir(directory):
@@ -1599,7 +1644,7 @@ start_time = time.time()
 #plot_collected_charge(test_datafile)  #"2_plot_collected_charge" in Desktop/analysis_tct/Plts_of_Analysis2 # working
 #plot_amplitude(test_datafile, test_positions)   #"3_plot_amplitude" in Desktop/analysis_tct/Plts_of_Analysis2 # working
 #plot_2D_separate(test_datafile, test_positions)   #"4_plot_2D_separate" in Desktop/analysis_tct/Plts_of_Analysis2. # working
-#plot_interpad_distance_against_bias_voltage_v2()   #"5_plot_interpad_distance_against_bias_voltage_v2" in Desktop/analysis_tct/Plts_of_Analysis2. # not working
+plot_interpad_distance_against_bias_voltage_v2()   #"5_plot_interpad_distance_against_bias_voltage_v2" in Desktop/analysis_tct/Plts_of_Analysis2. # not working
 #plot_collected_charge_everything()   #6_plot_collected_charge_everything  in Desktop/analysis_tct/Plts_of_Analysis2 # not working
 #project_onto_y_two_channels(test_datafile, test_positions, 1, 2, get_sensor_strip_positions(test_datafile, test_positions, 1), get_sensor_strip_positions(test_datafile, test_positions, 1), pdf) # not working (pdf not defined)
 #"7_project_onto_y_two_channels" in Desktop/analysis_tct/Plts_of_Analysis2
@@ -1613,7 +1658,7 @@ start_time = time.time()
 #plot_sensor_strip_positions(test_datafile, test_positions)
 # query_dataset(test_datafile)
 # print(get_positions(test_positions))
-print(get_channel_amplitude(test_datafile, 1))
+#print(get_channel_amplitude(test_datafile, 1))
 
 
 time_taken = round(time.time() - start_time)

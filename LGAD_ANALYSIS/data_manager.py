@@ -1,21 +1,31 @@
-# MEASURED DATA PROCESSING
+# data_manager.py
+from config import Paths, Colors, Filters, InterpadConfig
+from scipy import stats
+from scipy.optimize import curve_fit
+import os
+import statistics
 import sqlite3
 import pandas
 import numpy
 import pickle
 import math
 import statistics
-from config import AMPLITUDE_THRESHOLD, TIME_DIFF_MIN, TIME_DIFF_MAX, PEAK_TIME_MIN, PEAK_TIME_MAX
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
+import matplotlib.gridspec as gridspec
+from matplotlib import figure
 
+def gaussian(x, mu, sig):
+    return 1./(numpy.sqrt(2.*numpy.pi)*sig)*numpy.exp(-numpy.power((x - mu)/sig, 2.)/2)
 
 def query_dataset(datafile):
-    #print(f"Querying dataset...")
-    #global n_position; global n_triggers; global n_channels
+    print(f"Querying dataset...")
     connection = sqlite3.connect(datafile)
-    query = "SELECT n_position FROM dataframe_table WHERE n_trigger = 0 and n_pulse = 1 and n_channel = 1"
+    (chan1, chan2) = determine_active_channels(datafile)
+    query = f"SELECT n_position FROM dataframe_table WHERE n_trigger = 0 and n_pulse = 1 and n_channel = {chan1}"
     filtered_data = pandas.read_sql_query(query, connection)
     n_position = len(filtered_data)
-    query = "SELECT n_trigger FROM dataframe_table WHERE n_position = 0 and n_pulse = 1 and n_channel = 1"
+    query = f"SELECT n_trigger FROM dataframe_table WHERE n_position = 0 and n_pulse = 1 and n_channel = {chan1}"
     filtered_data = pandas.read_sql_query(query, connection)
     n_triggers = len(filtered_data)
     query = "SELECT n_channel FROM dataframe_table WHERE n_position = 0 and n_pulse = 1 and n_trigger = 0"
@@ -25,9 +35,11 @@ def query_dataset(datafile):
     #print(f"{n_position} positions, {n_triggers} triggers and {n_channels} channels found")
     return n_position, n_triggers, n_channels
 
+
 def get_positions(positions):
     # get the (x,y) positions from the saved data
     # print(f"Getting position data...")
+    n_position, n_triggers, n_channels = query_dataset(Paths.DATAFILE)
     positions_data = pandas.read_pickle(positions)
     positions_data.reset_index(['n_x','n_y'], drop=False, inplace=True)
     for _ in {'x','y'}: # remove offset so (0,0) is the center
@@ -56,7 +68,7 @@ def get_bias_voltage(datafile):
     return (voltage, uncertainty)
 
 def get_channel_amplitude(datafile, channel, pulse_no = 1):
-    query_dataset(datafile)
+    n_position, n_triggers, n_channels = query_dataset(datafile)
     connection = sqlite3.connect(datafile)
     data = pandas.read_sql(f"SELECT n_position,n_trigger,n_pulse, `t_90 (s)`, `Time over 90% (s)`,`Amplitude (V)`, `t_50 (s)` FROM dataframe_table WHERE n_channel=={channel}", connection)
     data.set_index(['n_position','n_trigger','n_pulse'], inplace=True)
@@ -69,13 +81,13 @@ def get_channel_amplitude(datafile, channel, pulse_no = 1):
         result = []
         for j in range(n_triggers):
             amplitude = amplitude_data[i,j,1]
-            if math.isnan(amplitude) or amplitude > AMPLITUDE_THRESHOLD:
+            if math.isnan(amplitude) or amplitude > Filters.AMPLITUDE_THRESHOLD:
                 continue
             time_diff = (t_50_data[i,j,2] - t_50_data[i,j,1]) * 1e9
-            if time_diff < TIME_DIFF_MIN or time_diff > TIME_DIFF_MAX:
+            if time_diff < Filters.TIME_DIFF_MIN or time_diff > Filters.TIME_DIFF_MAX:
                 continue
             peak_time = (t_90_data[i,j,1] + 0.5 * time_over_90_data[i,j,1]) * 1e9
-            if peak_time < PEAK_TIME_MIN or peak_time > PEAK_TIME_MAX:
+            if peak_time < Filters.PEAK_TIME_MIN or peak_time > Filters.PEAK_TIME_MAX:
                 continue
             result.append(amplitude)
         if result == []:
@@ -84,9 +96,39 @@ def get_channel_amplitude(datafile, channel, pulse_no = 1):
             amplitudes.append(statistics.mean(result))
     return amplitudes
 
-# Hardcoded to return channels 1 and 2 for now
 def determine_active_channels(datafile):
-##    query_dataset(datafile)
+    connection = sqlite3.connect(datafile)
+    query = "SELECT n_channel, `Amplitude (V)` FROM dataframe_table"
+    df = pandas.read_sql_query(query, connection)
+    connection.close()
+    if df.empty:
+        return ()
+    df["AmpAbs"] = df["Amplitude (V)"].abs()
+    pairs = {
+        (1, 2): None,
+        (3, 4): None,
+    }
+    mean_values = {}
+
+    for pair in pairs:
+        chA, chB = pair
+
+        df_pair = df[df["n_channel"].isin(pair)]
+
+        if df_pair.empty:
+            mean_values[pair] = 0
+        else:
+            mean_values[pair] = df_pair["AmpAbs"].mean()
+    # chose the pair with the highest mean amplitude
+    best_pair = max(mean_values, key=mean_values.get)
+    if mean_values[best_pair] == 0:
+        return ()
+    return best_pair
+
+
+# Hardcoded to return channels 1 and 2 for now
+## def determine_active_channels(datafile):
+##    n_position, n_triggers, n_channels = query_dataset(datafile)
 ##    result = {}; list_to_sort = []
 ##    for channel in range(1, n_channels + 1):
 ##        amplitudes = get_channel_amplitude(datafile, channel, pulse_no = 1, method = "median")
@@ -94,12 +136,12 @@ def determine_active_channels(datafile):
 ##        list_to_sort.append(round(sum(amplitudes),3))
 ##        list_to_sort = sorted(list_to_sort)
 ##    return tuple(sorted((result[list_to_sort[0]], result[list_to_sort[1]])))
-    return (1,2)
+##    return (1,2)
 
 
 def get_pad_positions(datafile, positions, channel): 
     # retrurns list of position indices that correspond to signal
-    query_dataset(datafile)
+    n_position, n_triggers, n_channels = query_dataset(datafile)
     (x,y) = get_positions(positions)
     connection = sqlite3.connect(datafile)
     data = pandas.read_sql(f"SELECT n_position,n_trigger,n_pulse, `t_90 (s)`, `Time over 90% (s)`,`Amplitude (V)`, `t_50 (s)` FROM dataframe_table WHERE n_channel=={channel}", connection)
@@ -114,13 +156,13 @@ def get_pad_positions(datafile, positions, channel):
         result = []
         for j in range(n_triggers):
             amplitude = amplitude_data[i,j,1]
-            if math.isnan(amplitude) or amplitude > AMPLITUDE_THRESHOLD:
+            if math.isnan(amplitude) or amplitude > Filters.AMPLITUDE_THRESHOLD:
                 continue
             time_diff = (t_50_data[i,j,2] - t_50_data[i,j,1]) * 1e9
-            if time_diff < TIME_DIFF_MIN or time_diff > TIME_DIFF_MAX:
+            if time_diff < Filters.TIME_DIFF_MIN or time_diff > Filters.TIME_DIFF_MAX:
                 continue
             peak_time = (t_90_data[i,j,1] + 0.5 * time_over_90_data[i,j,1]) * 1e9
-            if peak_time < PEAK_TIME_MIN or peak_time > PEAK_TIME_MAX:
+            if peak_time < Filters.PEAK_TIME_MIN or peak_time > Filters.PEAK_TIME_MAX:
                 continue
             result.append(amplitude)
         if result == []:
@@ -143,7 +185,7 @@ def get_pad_positions(datafile, positions, channel):
     return pad_position
 
 def plot_pad_positions(datafile, positions):
-    query_dataset(datafile)
+    n_position, n_triggers, n_channels = query_dataset(datafile)
     x, y = get_positions(positions)  # lists of positions in µm
     (active_channel_1, active_channel_2) = determine_active_channels(datafile)
     pad_positions_1 = get_pad_positions(datafile, positions, active_channel_1)
@@ -157,13 +199,13 @@ def plot_pad_positions(datafile, positions):
     if pad_positions_1:
         xs1 = [x[i] for i in pad_positions_1]
         ys1 = [y[i] for i in pad_positions_1]
-        plt.scatter(xs1, ys1, s=30, color=CB_color_cycle[0], edgecolor='k', label=f'Pad Positions Ch {active_channel_1}', zorder=3)
+        plt.scatter(xs1, ys1, s=30, color=Colors.CB_CYCLE[0], edgecolor='k', label=f'Pad Positions Ch {active_channel_1}', zorder=3)
 
     # channel 2 pads
     if pad_positions_2:
         xs2 = [x[i] for i in pad_positions_2]
         ys2 = [y[i] for i in pad_positions_2]
-        plt.scatter(xs2, ys2, s=30, color=CB_color_cycle[1], edgecolor='k', label=f'Pad Positions Ch {active_channel_2}', zorder=4)
+        plt.scatter(xs2, ys2, s=30, color=Colors.CB_CYCLE[1], edgecolor='k', label=f'Pad Positions Ch {active_channel_2}', zorder=4)
 
     plt.xlabel(r"x ($\mu$m)")
     plt.ylabel(r"y ($\mu$m)")
@@ -174,8 +216,114 @@ def plot_pad_positions(datafile, positions):
     plt.show()
     return None
 
+def plot_pad_position_everything(directory_in_str="Data/"):
+    """
+    Creates a PDF:
+      - One section per sensor
+      - One page per voltage
+      - Each page contains: pad positions Ch1+Ch2, Ch1 only, Ch2 only
+      - Last page contains filter values
+    """
+
+    pdf_name = "pad_positions_everything.pdf"
+    with PdfPages(pdf_name) as pdf:
+
+        # Loop over sensors
+        for sensor in sorted(os.listdir(directory_in_str)):
+            if sensor.startswith("."):
+                continue
+
+            sensor_dir = os.path.join(directory_in_str, sensor)
+            if not os.path.isdir(sensor_dir):
+                continue
+
+            print(f"\nProcessing sensor: {sensor}")
+
+            # Loop over voltages
+            voltages = sorted(
+                [v for v in os.listdir(sensor_dir) if not v.startswith(".")],
+                key=lambda x: int(x.rstrip("V"))
+            )
+
+            for voltage in voltages:
+                voltage_dir = os.path.join(sensor_dir, voltage)
+
+                data_file = os.path.join(voltage_dir, "parsed_from_waveforms.sqlite")
+                positions_file = os.path.join(voltage_dir, "positions.pickle")
+
+                print(f"  Voltage: {voltage}")
+
+                # Read data for this sensor/voltage
+                (ch1, ch2) = determine_active_channels(data_file)
+                pad1 = get_pad_positions(data_file, positions_file, ch1)
+                pad2 = get_pad_positions(data_file, positions_file, ch2)
+                x, y = get_positions(positions_file)
+
+                # =============================================
+                # MAKE THE PAGE WITH 3 SUBPLOTS
+                # =============================================
+                fig, axes = plt.subplots(1, 3, figsize=(16, 5))
+                titles = [
+                    f"{sensor} - {voltage}\nCh {ch1}+{ch2}",
+                    f"{sensor} - {voltage}\nCh {ch1} only",
+                    f"{sensor} - {voltage}\nCh {ch2} only",
+                ]
+
+                for ax, show_ch1, show_ch2, title in zip(
+                        axes,
+                        [True, True, False],
+                        [True, False, True],
+                        titles):
+                    
+                    ax.scatter(x, y, s=4, color="lightgrey", label="All Positions")
+
+                    # CH1
+                    if show_ch1 and pad1:
+                        xs1 = [x[i] for i in pad1]; ys1 = [y[i] for i in pad1]
+                        ax.scatter(xs1, ys1, s=30, color=Colors.CB_CYCLE[0],
+                                   edgecolor="k", label=f"Ch {ch1}")
+
+                    # CH2
+                    if show_ch2 and pad2:
+                        xs2 = [x[i] for i in pad2]; ys2 = [y[i] for i in pad2]
+                        ax.scatter(xs2, ys2, s=30, color=Colors.CB_CYCLE[1],
+                                   edgecolor="k", label=f"Ch {ch2}")
+
+                    ax.set_title(title)
+                    ax.set_xlabel("x (µm)")
+                    ax.set_ylabel("y (µm)")
+                    ax.set_aspect("equal", "box")
+                    ax.legend(loc="best", fontsize="small")
+
+                plt.tight_layout()
+                pdf.savefig(fig, dpi=120)
+                plt.close(fig)
+
+        # ==============================================================
+        # LAST PAGE : FILTER VALUES
+        # ==============================================================
+        fig = plt.figure(figsize=(8, 5))
+        plt.title("Filter Values Used (from config.Filters)", fontsize=14)
+
+        text = (
+            f"AMPLITUDE_THRESHOLD = {Filters.AMPLITUDE_THRESHOLD}\n"
+            f"TIME_DIFF_MIN       = {Filters.TIME_DIFF_MIN} ns\n"
+            f"TIME_DIFF_MAX       = {Filters.TIME_DIFF_MAX} ns\n"
+            f"PEAK_TIME_MIN       = {Filters.PEAK_TIME_MIN} ns\n"
+            f"PEAK_TIME_MAX       = {Filters.PEAK_TIME_MAX} ns\n"
+        )
+
+        plt.text(0.1, 0.5, text, fontsize=14, family="monospace")
+        plt.axis("off")
+
+        pdf.savefig(fig, dpi=120)
+        plt.close(fig)
+
+    print(f"\n[OK] PDF saved as: {pdf_name}")
+    return None
+
 def get_sensor_strip_positions(datafile, positions, channel):
-    query_dataset(datafile)
+    n_position, n_triggers, n_channels = query_dataset(datafile)
     (x,y) = get_positions(positions)
     connection = sqlite3.connect(datafile)
     data = pandas.read_sql(f"SELECT n_position,n_trigger,n_pulse, `t_90 (s)`, `Time over 90% (s)`,`Amplitude (V)`, `t_50 (s)` FROM dataframe_table WHERE n_channel=={channel}", connection)
@@ -192,10 +340,10 @@ def get_sensor_strip_positions(datafile, positions, channel):
             if math.isnan(amplitude) or amplitude > 0: # HARDCODED TRESHOLD??
                 continue
             time_diff = (t_50_data[i,j,2] - t_50_data[i,j,1]) * 1e9
-            if time_diff < TIME_DIFF_MIN or time_diff > TIME_DIFF_MAX:
+            if time_diff < Filters.TIME_DIFF_MIN or time_diff > Filters.TIME_DIFF_MAX:
                 continue
             peak_time = (t_90_data[i,j,1] + 0.5 * time_over_90_data[i,j,1]) * 1e9
-            if peak_time < PEAK_TIME_MIN or peak_time > PEAK_TIME_MAX:
+            if peak_time < Filters.PEAK_TIME_MIN or peak_time > Filters.PEAK_TIME_MAX:
                 continue
             result.append(amplitude)
         if result == []:
@@ -206,9 +354,9 @@ def get_sensor_strip_positions(datafile, positions, channel):
     data_frame = pandas.DataFrame({'x': x, 'y': y, 'z': amplitudes})
 
     # select only intersting region
-    data_frame = data_frame[(data_frame["x"] >= -50) & (data_frame["x"] <= 50) & (data_frame["y"] >= -50) & (data_frame["y"] <= 50)]
+    data_frame = data_frame[(data_frame["x"] >= InterpadConfig.INTERPAD_REGION_MIN) & (data_frame["x"] <= InterpadConfig.INTERPAD_REGION_MAX) & (data_frame["y"] >= InterpadConfig.INTERPAD_REGION_MIN) & (data_frame["y"] <= InterpadConfig.INTERPAD_REGION_MAX)]
 
-    points_from_edge = 2 # this is hardcoded number
+    points_from_edge = InterpadConfig.POINTS_FROM_EDGE_STRIP_POSITION # this is hardcoded number
     smallest_list = (pandas.Series(data_frame['y'].unique()).nsmallest(points_from_edge)).to_list()
     largest_list = (pandas.Series(data_frame['y'].unique()).nlargest(points_from_edge)).to_list()
     bins_in_y = len((pandas.Series(data_frame['y'].unique())).to_list())
@@ -250,14 +398,14 @@ def get_sensor_strip_positions(datafile, positions, channel):
             row_index = position_frame.query(f"x == {x_value} and y == {y_value}").index[0]
             pad_position.append(row_index)
     # If you want to see which x and y is selected
-    print(f"Valid x: {valid_x}")
-    print(f"Valid y: {valid_y}")
-    print(f"pad position strip: {pad_position}")
+    # print(f"Valid x: {valid_x}")
+    # print(f"Valid y: {valid_y}")
+    # print(f"pad position strip: {pad_position}")
     return pad_position
 
 def plot_sensor_strip_positions(datafile, positions):
     # Load and prepare data
-    query_dataset(datafile)
+    n_position, n_triggers, n_channels = query_dataset(datafile)
     x, y = get_positions(positions)
     active_ch1, active_ch2 = determine_active_channels(datafile)
 
@@ -281,7 +429,7 @@ def plot_sensor_strip_positions(datafile, positions):
             xs1 = [x[i] for i in sensor_pos_ch1]
             ys1 = [y[i] for i in sensor_pos_ch1]
             ax.scatter(
-                xs1, ys1, s=30, color=CB_color_cycle[0],
+                xs1, ys1, s=30, color=Colors.CB_CYCLE[0],
                 edgecolor='k', label=f"Ch {active_ch1}", zorder=3
             )
 
@@ -290,7 +438,7 @@ def plot_sensor_strip_positions(datafile, positions):
             xs2 = [x[i] for i in sensor_pos_ch2]
             ys2 = [y[i] for i in sensor_pos_ch2]
             ax.scatter(
-                xs2, ys2, s=30, color=CB_color_cycle[1],
+                xs2, ys2, s=30, color=Colors.CB_CYCLE[1],
                 edgecolor='k', label=f"Ch {active_ch2}", zorder=4
             )
 
@@ -314,141 +462,117 @@ def plot_sensor_strip_positions(datafile, positions):
 
     return None
 
-def project_onto_y_two_channels(datafile, positions, channel1, channel2, sensor_strip_positions1, sensor_strip_positions2, pdf):
-    query_dataset(datafile)
-    (x,y) = get_positions(positions)
-    amplitudes = {} # {y position: [list of amplitudes]}
-    counter = {}
-    result = {"x axis": [], "y axis": [], "y error": []}
-    connection = sqlite3.connect(datafile)
-    data = pandas.read_sql(f"SELECT n_position,n_trigger,n_pulse,n_channel, `t_90 (s)`, `Time over 90% (s)`,`Amplitude (V)`, `t_50 (s)` FROM dataframe_table", connection)
-    data.set_index(['n_position','n_trigger','n_pulse','n_channel'], inplace=True)
-    amplitude_data = data['Amplitude (V)']
-    t_50_data = data['t_50 (s)']
-    t_90_data = data["t_90 (s)"]
-    time_over_90_data = data['Time over 90% (s)']
-    sensor_strip_positions = list(set(sensor_strip_positions1 + sensor_strip_positions2))
-    # for normalisation 
-    pad_positions = get_pad_positions(datafile, positions, channel1)
-    (ch1_norm, ch1_norm_err) = plot_amplitude_of_one_pad(datafile, channel1, pad_positions)
-    pad_positions = get_pad_positions(datafile, positions, channel2)
-    (ch2_norm, ch2_norm_err) = plot_amplitude_of_one_pad(datafile, channel2, pad_positions)
-    for i in sensor_strip_positions:
-        for j in range(n_triggers):
-            amplitude1 = amplitude_data[i,j,1,channel1]
-            time_diff1 = (t_50_data[i,j,2,channel1] - t_50_data[i,j,1,channel1]) * 1e9
-            peak_time1 = (t_90_data[i,j,1,channel1] + 0.5 * time_over_90_data[i,j,1,channel1]) * 1e9
-            amplitude2 = amplitude_data[i,j,1,channel2]
-            time_diff2 = (t_50_data[i,j,2,channel2] - t_50_data[i,j,1,channel2]) * 1e9
-            peak_time2 = (t_90_data[i,j,1,channel2] + 0.5 * time_over_90_data[i,j,1,channel2]) * 1e9
-            # if any of them fail cut, set to 0
-            if math.isnan(amplitude1) or amplitude1 > AMPLITUDE_THRESHOLD:
-                amplitude1 = 0
-            if time_diff1 < TIME_DIFF_MIN or time_diff1 > TIME_DIFF_MAX:
-                amplitude1 = 0
-            if peak_time1 < PEAK_TIME_MIN or peak_time1 > PEAK_TIME_MAX:
-                amplitude1 = 0
-            if math.isnan(amplitude2) or amplitude2 > AMPLITUDE_THRESHOLD: # FOR SOME REASON WAS 0
-                amplitude2 = 0
-            if time_diff2 < TIME_DIFF_MIN or time_diff2 > TIME_DIFF_MAX:
-                amplitude2 = 0
-            if peak_time2 < PEAK_TIME_MIN or peak_time2 > PEAK_TIME_MAX:
-                amplitude2 = 0
-            # if both fails cut, go next
-            if amplitude1 + amplitude2 == 0:
-                continue
 
-            if y[i] not in amplitudes:
-                amplitudes[y[i]] = []
-            normalised_amplitude = amplitude1/ch1_norm + amplitude2/ch2_norm
-            amplitudes[y[i]].append(normalised_amplitude)
+def detect_type(data):
 
-    for y_position in sorted(amplitudes):
-        plt.clf()
-        hist = amplitudes[y_position]
-        mu, std = statistics.mean(hist), statistics.stdev(hist)
-        bin_min = mu - 4 * std; bin_max = mu + 4 * std
-        bin_width = 0.0005 # hardcoded bin width (initial value = 0.05)
-        n_bins = round( (bin_max - bin_min) / bin_width )
-        custom_bins = numpy.linspace(bin_min, bin_max, n_bins ,endpoint=True)
-        (n, bins, patches) = plt.hist(hist, bins="auto", density=True, stacked=False ,histtype='stepfilled', alpha = 0.5, lw=1, label=f"Data (${{\mu}}$ = {round(mu,2)}, ${{\sigma}}$ = {round(std,2)})")
-        bin_centers = (bins[:-1] + bins[1:]) / 2
-        (muf, stdf), covf = curve_fit(gaussian, bin_centers, n, maxfev=10000, p0=[mu, std])
-        fit_x_axis = numpy.linspace(min(bin_centers), max(bin_centers), 200, endpoint=True)
-        fit_y_axis = gaussian(fit_x_axis, muf, stdf)
-        result["x axis"].append(y_position)
-        result["y axis"].append(abs(muf))
-        result["y error"].append(stdf)
-        plt.plot(fit_x_axis, fit_y_axis, color = "r", label=f"Fit (${{\mu}}$ = {round(muf,2)}, ${{\sigma}}$ = {round(stdf,2)})")
-        plt.xlabel(f"Amplitude")
-        plt.ylabel(f"Frequency")
-        plt.legend(loc = "best")
-        plt.title(f'{datafile[5:11]}, {datafile[12:16]}, Channel {channel1} + {channel2}, y: {y_position} ${{\mu}}$m, N: {len(hist)}')
-        fig = plt.gcf()
-        pdf.savefig(fig, dpi = 100)
-    return result
+    if isinstance(data, dict):
+        # Amplitude, charge, timing
+        return "dict"
+    elif isinstance(data, tuple) and len(data) == 3:
+        # Timing interpad
+        return "tuple_3"
+    elif isinstance(data, tuple) and len(data) == 4:
+        # Interpad distance
+        return "tuple_4"
+    else:
+        raise ValueError("Type of data not recognized.")
 
-def project_onto_y_one_channel(datafile, positions, channel, sensor_strip_positions):
-    query_dataset(datafile)
-    (x,y) = get_positions(positions)
-    amplitudes = {} # {y position: [list of amplitudes]}
-    connection = sqlite3.connect(datafile)
-    data = pandas.read_sql(f"SELECT n_position,n_trigger,n_pulse, `t_90 (s)`, `Time over 90% (s)`,`Amplitude (V)`, `t_50 (s)` FROM dataframe_table WHERE n_channel=={channel}", connection)
-    data.set_index(['n_position','n_trigger','n_pulse'], inplace=True)
-    amplitude_data = data['Amplitude (V)']
-    t_50_data = data['t_50 (s)']
-    t_90_data = data["t_90 (s)"]
-    time_over_90_data = data['Time over 90% (s)']
-    # all_amps = amplitude_data.values
-    # min_val = numpy.nanmin(all_amps)
-    # max_val = numpy.nanmax(all_amps)
 
-    for i in sensor_strip_positions:
-        for j in range(n_triggers):
-            amplitude = amplitude_data[i,j,1]
-            if math.isnan(amplitude) or amplitude > 0.02: 
-                continue
-            time_diff = (t_50_data[i,j,2] - t_50_data[i,j,1]) * 1e9
-            if time_diff < TIME_DIFF_MIN or time_diff > TIME_DIFF_MAX:
-                continue
-            peak_time = (t_90_data[i,j,1] + 0.5 * time_over_90_data[i,j,1]) * 1e9
-            if peak_time < PEAK_TIME_MIN or peak_time > PEAK_TIME_MAX:
-                continue
+def save_results(results_dict, analysis="NULL"):
+    # Base directory: saved_results/<analysis>/
+    if analysis != "NULL":
+        base_dir = os.path.join(Paths.SAVE_DIR, analysis)
+    else:
+        base_dir = Paths.SAVE_DIR
 
-            if y[i] not in amplitudes:
-                amplitudes[y[i]] = []
-            #norm_amplitude = (amplitude - min_val) / (max_val - min_val)
-            amplitudes[y[i]].append(amplitude)
+    os.makedirs(base_dir, exist_ok=True)
 
-    result = {"x axis": [], "y axis": [], "y error": []}
+    for filename, data in results_dict.items():
+        data_type = detect_type(data)
 
-    for y_position in sorted(amplitudes):
-        hist = amplitudes[y_position]
-        if len(hist) == 1: # toss
-            continue
-        mu, std = statistics.mean(hist), statistics.stdev(hist)
+        # ============================================================
+        # SPECIAL CASE for Timing_interpad_region:
+        # data = { "50V": {...}, "80V": {...}, ... }
+        # We must save each voltage separately.
+        # ============================================================
+        if analysis == "Timing_interpad_region" and isinstance(data, dict):
+            # first layer directory = sensor name
+            sensor_dir = os.path.join(base_dir, filename)
+            os.makedirs(sensor_dir, exist_ok=True)
 
-        if len(hist) < 10: # no fit if less than this amount of points
-            # result["x axis"].append(y_position)
-            # result["y axis"].append(abs(mu))
-            # result["y error"].append(std) 
-            continue 
+            for voltage, vdata in data.items():
+                vtype = detect_type(vdata)
+                save_path = os.path.join(sensor_dir, f"{voltage}.pkl")
 
-        bin_min = mu - 4 * std; bin_max = mu + 4 * std
-        bin_width = 0.0005 # hardcoded bin width
-        n_bins = round( (bin_max - bin_min) / bin_width )
-        custom_bins = numpy.linspace(bin_min, bin_max, n_bins ,endpoint=True)
-        (n, bins, patches) = plt.hist(hist, bins=custom_bins, density=True, stacked=False ,histtype='stepfilled', alpha = 0.5, lw=1, label=f"Data (${{\mu}}$ = {round(mu,2)}, ${{\sigma}}$ = {round(std,2)})")
-        bin_centers = (bins[:-1] + bins[1:]) / 2
-        (muf, stdf), covf = curve_fit(gaussian, bin_centers, n, maxfev=10000, p0=[mu, std])
-        result["x axis"].append(y_position)
-        result["y axis"].append(abs(muf))
-        result["y error"].append(stdf)  
+                with open(save_path, "wb") as f:
+                    pickle.dump({"type": vtype, "data": vdata}, f)
 
-        plt.title(f"Histogram amplitudes — y = {y_position}")
-        plt.xlabel("Amplitude")
-        plt.ylabel("Frequency")
-        plt.legend()
+                print(f"[OK] Saved: {save_path}")
 
-        #plt.show()
-    return result
+        else:
+            save_path = os.path.join(base_dir, f"{filename}.pkl")
+
+            with open(save_path, "wb") as f:
+                pickle.dump({"type": data_type, "data": data}, f)
+
+            print(f"[OK] Saved: {save_path}")
+
+
+
+def load_results(filepath):
+    with open(filepath, "rb") as f:
+        packed = pickle.load(f)
+
+    return packed["type"], packed["data"]
+
+
+def merge_saved_results(pkl_path_1, pkl_path_2, output_path):
+    """
+    Merge two saved_results pickle files into a single pickle.
+    - pkl_path_1 : first pickle file
+    - pkl_path_2 : second pickle file
+    - output_path : where to save the merged pickle
+    """
+
+    # ---- load first file ----
+    with open(pkl_path_1, "rb") as f:
+        packed1 = pickle.load(f)
+    type1 = packed1["type"]
+    data1 = packed1["data"]
+
+    # ---- load second file ----
+    with open(pkl_path_2, "rb") as f:
+        packed2 = pickle.load(f)
+    type2 = packed2["type"]
+    data2 = packed2["data"]
+
+    # ---- safety check ----
+    if type1 != type2:
+        raise ValueError(
+            f"Cannot merge: type mismatch ({type1} vs {type2})"
+        )
+
+    # ---- merge depending on type ----
+    if isinstance(data1, dict) and isinstance(data2, dict):
+        merged = data1.copy()
+        for key, val in data2.items():
+            if key not in merged:
+                merged[key] = val
+            else:
+                # If both files contain the same sensor/voltage/etc.
+                # data2 overrides data1
+                merged[key] = val
+    else:
+        raise ValueError(
+            "Merge only supported for dict-based data (Amplitude, Charge, Timing, Interpad, Timing_interpad_region)"
+        )
+
+    # ---- save merged pkl ----
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+    with open(output_path, "wb") as f:
+        pickle.dump({"type": type1, "data": merged}, f)
+
+    print(f"[OK] Merged file saved to: {output_path}")
+
+    return output_path

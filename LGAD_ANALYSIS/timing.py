@@ -1,5 +1,6 @@
 # SCRIPT FOR TIMING ANALYSIS
-import data_manager as dm  
+from config import Paths, Colors, Filters, PlotsConfig
+from data_manager import *
 import sqlite3
 import pandas
 import numpy
@@ -7,15 +8,15 @@ import math
 import statistics
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
-
-def gaussian(x, mu, sig):
-    return 1./(numpy.sqrt(2.*numpy.pi)*sig)*numpy.exp(-numpy.power((x - mu)/sig, 2.)/2)
+import os
+from matplotlib.backends.backend_pdf import PdfPages
 
 def plot_time_difference_t50(datafile):
-    query_dataset(datafile)
+    n_position, n_triggers, n_channels = query_dataset(datafile)
     time_difference = {}
+    active_channels = determine_active_channels(datafile)
     connection = sqlite3.connect(datafile)
-    for channel in range(1, n_channels + 1):
+    for channel in active_channels:
         time_difference[channel] = []
         data = pandas.read_sql(f"SELECT n_position,n_trigger,n_pulse,`t_50 (s)` FROM dataframe_table WHERE n_channel=={channel}", connection)
         data.set_index(['n_position','n_trigger','n_pulse'], inplace=True)
@@ -23,31 +24,60 @@ def plot_time_difference_t50(datafile):
         for i in range(n_position):
             for j in range(n_triggers):
                 time_diff = (time_data[i,j,2] - time_data[i,j,1]) * 1e9
+                if math.isnan(time_diff):
+                    continue
                 time_difference[channel].append(time_diff)
     connection.close()
-    connection.close()
-    fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(12,6))
-    for channel in (1,2):
-        bin_min = 97; bin_max = 101
-        bin_min = 98; bin_max = 100
+    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(10,5))
+    ax1, ax2 = axes.flatten()
+    subplots = (ax1, ax2)
+    plot = 0 
+    for channel in active_channels:
+        mu  = numpy.mean(time_difference[channel])
+        std = numpy.std(time_difference[channel], ddof=1)
+        print(f"mu = {mu}, std = {std}")
+        bin_min = PlotsConfig.TIME_DIFF_T50_BIN_MIN
+        bin_max = PlotsConfig.TIME_DIFF_T50_BIN_MAX
         custom_bins = numpy.linspace(bin_min, bin_max, 50 ,endpoint=True)
-        ax1.hist(time_difference[channel], bins=custom_bins, stacked=False ,histtype='step', edgecolor=CB_color_cycle[channel], lw=1, label=f"Channel {channel}", weights= (1 / len(time_difference[channel])) * numpy.ones(len(time_difference[channel])))
-        ax1.set_xlabel(r"Time (ns)")
-        ax1.set_ylabel(f"Frequency")
-        ax1.legend(loc = "best")
+        (n, bins, patches) = subplots[plot].hist(time_difference[channel], bins=custom_bins, density=True, stacked=False ,histtype='stepfilled', color=Colors.CB_CYCLE[plot], alpha = 0.5, lw=1, label=f"Data (${{\mu}}$ = {round(mu,2)}, ${{\sigma}}$ = {round(std,2)})")
 
-    for channel in (3,4):
-        ax2.hist(time_difference[channel], bins=100, stacked=False ,histtype='step', edgecolor=CB_color_cycle[channel], lw=1, label=f"Channel {channel}", weights= (1 / len(time_difference[channel])) * numpy.ones(len(time_difference[channel])))
-        ax2.set_xlabel(r"Time (ns)")
-        ax2.set_ylabel(f"Frequency")
-        ax2.legend(loc = "best")
+        bin_centers = (bins[:-1] + bins[1:]) / 2
+        
+        (muf, stdf), covf = curve_fit(gaussian, bin_centers, n, maxfev=10000, p0=[mu, std])
+
+        fit_x_axis = numpy.linspace(min(bin_centers), max(bin_centers), 200, endpoint=True)
+        fit_y_axis = gaussian(fit_x_axis, muf, stdf)
+
+        subplots[plot].set_xlim(bin_min, bin_max)
+        subplots[plot].plot(fit_x_axis, fit_y_axis, "r", label="Gaussian fit")
+
+        subplots[plot].axvline(
+            x=Filters.TIME_DIFF_MIN,
+            color='blue',
+            linestyle='--',
+            label='Min Time Difference'
+        )
+        subplots[plot].axvline(
+            x=Filters.TIME_DIFF_MAX,
+            color='green',
+            linestyle='--',
+            label='Max Time Difference'
+        )
+
+        subplots[plot].set_xlabel("Time difference (ns)")
+        subplots[plot].set_ylabel("Probability density")
+        subplots[plot].legend(loc="upper left")
+
+        plot += 1
+
+
     fig.suptitle(f'Time Difference (t_50)')
     plt.show()
     return None
 
 
 def plot_time_resolution_of_one_pad(datafile, channel, pad_positions):
-    query_dataset(datafile)
+    n_position, n_triggers, n_channels = query_dataset(datafile)
     time_differences = []
     connection = sqlite3.connect(datafile)
     data = pandas.read_sql(f"SELECT n_position,n_trigger,n_pulse, `t_90 (s)`, `Time over 90% (s)`,`Amplitude (V)`, `t_50 (s)` FROM dataframe_table WHERE n_channel=={channel}", connection)
@@ -61,13 +91,13 @@ def plot_time_resolution_of_one_pad(datafile, channel, pad_positions):
             continue
         for j in range(n_triggers):
             amplitude = amplitude_data[i,j,1]
-            if math.isnan(amplitude) or amplitude > AMPLITUDE_THRESHOLD:
+            if math.isnan(amplitude) or amplitude > Filters.AMPLITUDE_THRESHOLD:
                 continue
             time_diff = (t_50_data[i,j,2] - t_50_data[i,j,1]) * 1e9
-            if time_diff < TIME_DIFF_MIN or time_diff > TIME_DIFF_MAX:
+            if time_diff < Filters.TIME_DIFF_MIN or time_diff > Filters.TIME_DIFF_MAX:
                 continue
             peak_time = (t_90_data[i,j,1] + 0.5 * time_over_90_data[i,j,1]) * 1e9
-            if peak_time < PEAK_TIME_MIN or peak_time > PEAK_TIME_MAX:
+            if peak_time < Filters.PEAK_TIME_MIN or peak_time > Filters.PEAK_TIME_MAX:
                 continue
             if math.isnan(time_diff):
                 continue
@@ -94,7 +124,7 @@ def plot_time_resolution_of_one_pad(datafile, channel, pad_positions):
 
 def plot_time_resolution_everything(directory_in_str = "Data/"):
     final_plot = {} # {sensor: channel: ([voltages], [mean amplitude], [std amplitude (error)])}
-    with PdfPages(f"Output3.pdf") as pdf:
+    with PdfPages(f"timing.pdf") as pdf:
         directory = os.fsencode(directory_in_str)
         for file in os.listdir(directory):
             filename = os.fsdecode(file)
@@ -173,7 +203,7 @@ def plot_time_resolution_everything(directory_in_str = "Data/"):
                     linestyle = "-"
                 else:
                     linestyle = "--"
-                plt.plot(x_axis, y_axis, marker = "o", markersize = 2, linestyle = linestyle, linewidth = 1, color = CB_color_cycle[color_counter], label = f"{sensor}, Ch {channel}")
+                plt.plot(x_axis, y_axis, marker = "o", markersize = 2, linestyle = linestyle, linewidth = 1, color = Colors.CB_CYCLE[color_counter], label = f"{sensor}, Ch {channel}")
                 plt.errorbar(x_axis, y_axis, yerr = y_err, ls='none', ecolor = 'k', elinewidth = 1, capsize = 2)
                 linestyle_counter += 1
             color_counter += 1
@@ -184,11 +214,12 @@ def plot_time_resolution_everything(directory_in_str = "Data/"):
         plt.legend(loc = "best")
         fig = plt.gcf()
         pdf.savefig(fig, dpi = 100)
+        save_results(final_plot, analysis="Timing")
     return None
 
 def plot_time_difference_histogram(datafile, positions, y_position, pdf):
     (chan1, chan2) = determine_active_channels(datafile)
-    query_dataset(datafile)
+    n_position, n_triggers, n_channels = query_dataset(datafile)
     (x,y) = get_positions(positions)
     time_differences = [] # list of time differences
     connection = sqlite3.connect(datafile)
@@ -205,15 +236,15 @@ def plot_time_difference_histogram(datafile, positions, y_position, pdf):
         for j in range(n_triggers):
             for channel in (chan1, chan2):
                 amplitude = amplitude_data[i,j,1,channel]
-                if math.isnan(amplitude) or amplitude > AMPLITUDE_THRESHOLD:
+                if math.isnan(amplitude) or amplitude > Filters.AMPLITUDE_THRESHOLD:
                     continue
                 time_diff = (t_50_data[i,j,2, channel] - t_50_data[i,j,1, channel]) * 1e9
-                if time_diff < TIME_DIFF_MIN or time_diff > TIME_DIFF_MAX:
+                if time_diff < Filters.TIME_DIFF_MIN or time_diff > Filters.TIME_DIFF_MAX:
                     continue
                 peak_time = (t_90_data[i,j,1, channel] + 0.5 * time_over_90_data[i,j,1, channel]) * 1e9
-                if peak_time < PEAK_TIME_MIN or peak_time > PEAK_TIME_MAX:
+                if peak_time < Filters.PEAK_TIME_MIN or peak_time > Filters.PEAK_TIME_MAX:
                     continue
-                if y[i] >= INTERPAD_REGION_MIN and y[i] <= INTERPAD_REGION_MAX: # only pad region HARDCODED
+                if y[i] >= Filters.INTERPAD_REGION_MIN and y[i] <= Filters.INTERPAD_REGION_MAX: # only pad region HARDCODED
                     continue
                 time_differences.append(time_diff)
     mu, std = statistics.mean(time_differences), statistics.stdev(time_differences)
@@ -228,7 +259,7 @@ def plot_time_difference_histogram(datafile, positions, y_position, pdf):
     fit_y_axis = gaussian(fit_x_axis, muf, stdf)
 
     plt.clf()
-    plt.hist(time_differences, bins=50, color=CB_color_cycle[0], alpha=0.7)
+    plt.hist(time_differences, bins=50, color=Colors.CB_CYCLE[0], alpha=0.7)
     plt.plot(fit_x_axis, fit_y_axis, color = "r", label=f"Fit (${{\mu}}$ = {round(muf,2)}, ${{\sigma}}$ = {round(stdf,2)})")
     plt.title(f"Time Difference Histogram at y = {y_position} µm — {datafile[5:11]}, {datafile[12:16]}")
     plt.xlabel("Time Difference (ns)")

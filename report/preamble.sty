@@ -1,0 +1,220 @@
+\ProvidesPackage{preamble}
+
+\usepackage{lipsum}
+
+\def\frontmatter{%
+    \pagenumbering{roman}
+    \setcounter{page}{1}
+    \renewcommand{\thechapter}{\Roman{chapter}}
+}%
+
+\def\mainmatter{%
+    \pagenumbering{arabic}
+    \setcounter{page}{1}
+    \setcounter{chapter}{0}
+    \renewcommand{\thechapter}{\arabic{chapter}}
+}%
+
+\def\backmatter{%
+    \setcounter{chapter}{0}
+    \renewcommand{\thechapter}{\Alph{chapter}}
+}%
+
+\usepackage{float}
+\setcounter{tocdepth}{3}
+\setcounter{secnumdepth}{3}
+\usepackage{emptypage}
+\usepackage{gensymb}
+\usepackage{lmodern}
+\renewcommand*{\familydefault}{\sfdefault}
+\usepackage[english]{babel}
+\usepackage[colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue]{hyperref}
+\usepackage{url}
+\usepackage{color}
+\definecolor{darkblue}{RGB}{,71,140}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{tabu}
+\usepackage{colortbl}
+\usepackage{wrapfig}
+
+
+
+\usepackage{graphicx,caption}
+\usepackage{subcaption}
+\usepackage[english]{babel}
+\usepackage{booktabs}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{calc}
+\usepackage[normalem]{ulem}
+\usepackage[acronym, nopostdot, nogroupskip, style=list, toc, nonumberlist]{glossaries}
+% Load the Bruface standard
+\usepackage{BrufaceTitlepageStyle}
+\usepackage{geometry}
+%\geometry{a4paper, margin=2.5cm}
+
+\usepackage{tikz}
+%\usetikzlibrary{automata, positioning}
+\usetikzlibrary{automata, positioning, arrows.meta, decorations.markings}
+\usepackage{tikz-qtree}
+
+\usepackage{forest}
+\usepackage{dirtree}
+
+\usepackage[
+backend=biber,
+sorting=none,
+%mergedate=false,
+date=year,
+url=false,
+doi=false,
+isbn=false,
+eprint=false,
+%mergedate=false,
+giveninits
+]{biblatex}
+
+\usepackage{xpatch}
+
+\addbibresource{references.bib}
+\renewenvironment{theglossary}%
+    {\begin{list}{}
+      {%
+        \setlength\labelwidth{0pt}%
+        \setlength\itemindent{-\leftmargin}%
+        \setlength\itemsep{5pt}%
+        \setlength\parsep{0pt}%
+        \let\makelabel\descriptionlabel}%
+      }
+      {\end{list}}
+\makeglossaries
+
+
+\AtEveryBibitem{
+    \clearfield{urlyear}
+    \clearfield{urlmonth}
+    \clearlist{language}
+    \ifentrytype{book}{
+        \clearfield{pages}
+        \clearfield{pagetotal}
+        \clearfield{series}
+    }{
+        \clearlist{publisher}
+        \clearlist{location}
+    }  % executes first command if true, second if false (so publisher removed everywhere except books in this case)
+}
+
+\DeclareSourcemap{
+    \maps[datatype = bibtex]{
+    \map{ % find known journal title and replace with abbreviation
+        \step[fieldsource=journaltitle, matchi={Physics Letters A}, replace={Phys. Lett. A}]
+        \step[fieldsource=journal, matchi={Physics Letters A}, replace={Phys. Lett. A}]
+        \step[fieldsource=journaltitle, matchi={Physical review. A, Atomic, Molecular, and Optical Physics}, replace={Phys. Rev. A}]
+        \step[fieldsource=journal, matchi={Physical review. A, Atomic, Molecular, and Optical Physics}, replace={Phys. Rev. A}]
+        \step[fieldsource=journaltitle, matchi={Physical Review Letters}, replace={Phys. Rev. Lett.}]
+        \step[fieldsource=journal, matchi={Physical Review Letters}, replace={Phys. Rev. Lett.}]
+        \step[fieldsource=journaltitle, matchi={Physical Review Research}, replace={Phys. Rev. Res.}]
+        \step[fieldsource=journal, matchi={Physical Review Research}, replace={Phys. Rev. Res.}]
+        \step[fieldsource=journaltitle, matchi={Physical Review}, replace={Phys. Rev.}] % A VERIFIER
+        \step[fieldsource=journal, matchi={Physical Review}, replace={Phys. Rev.}] % A VERIFIER
+        \step[fieldsource=journaltitle, matchi={Physics Physique Fizika}, replace={Phys. Phys. Fiz.}] % A VERIFIER
+        \step[fieldsource=journal, matchi={Physics Physique Fizika}, replace={Phys. Phys. Fiz.}] % A VERIFIER
+        \step[fieldsource=journaltitle, matchi={Reviews of Modern Physics}, replace={Rev. Mod. Phys.}]
+        \step[fieldsource=journal, matchi={Reviews of Modern Physics}, replace={Rev. Mod. Phys.}]
+        \step[fieldsource=journaltitle, matchi={IEEE Transactions on Information Theory}, replace={IEEE Trans. Inf. Theory}]
+        \step[fieldsource=journal, matchi={IEEE Transactions on Information Theory}, replace={IEEE Trans. Inf. Theory}]
+        %\step[fieldsource=booktitle, matchi={2013 {IEEE} {International} {Symposium} on {Information} {Theory}}, replace={}]
+        \step[fieldsource=journaltitle, matchi={Journal of Physics A: Mathematical and General}, replace={J. Phys. A: Math. Gen.}]
+        \step[fieldsource=journal, matchi={Journal of Physics A: Mathematical and General}, replace={J. Phys. A: Math. Gen.}]
+        \step[fieldsource=journaltitle, matchi={The College Mathematics Journal}, replace={Coll. Math. J.}]
+        \step[fieldsource=journal, matchi={The College Mathematics Journal}, replace={Coll. Math. J.}]
+        \step[fieldsource=journaltitle, matchi={Quantum Information and Computation}, replace={Quant. Inf. Comput.}]
+        \step[fieldsource=journal, matchi={Quantum Information and Computation}, replace={Quant. Inf. Comput.}]
+        \step[fieldsource=journaltitle, matchi={New Journal of Physics}, replace={New J. Phys.}]
+        \step[fieldsource=journal, matchi={New Journal of Physics}, replace={New J. Phys.}]
+        \step[fieldsource=journaltitle, matchi={Computer Physics Communications}, replace={Comput. Phys. Commun.}]
+        \step[fieldsource=journal, matchi={Computer Physics Communications}, replace={Comput. Phys. Commun.}]
+        \step[fieldsource=journaltitle, matchi={Journal of the ACM}, replace={J. ACM}]
+        \step[fieldsource=journal, matchi={Journal of the ACM}, replace={J. ACM}]
+        \step[fieldsource=journaltitle, matchi={Economics Letters}, replace={Econ. Lett.}]
+        \step[fieldsource=journal, matchi={Economics Letters}, replace={Econ. Lett.}]
+        }
+    }
+}
+
+\DeclareFieldFormat[article,inbook,incollection,inproceedings,patent,thesis,unpublished]{title}{#1\isdot}
+\DeclareFieldFormat[article,inbook,incollection,inproceedings,patent,thesis,unpublished]{date}{\mkbibparens{#1}}
+\DeclareFieldFormat{pages}{#1}
+\renewbibmacro{in:}{
+    \ifentrytype{inproceedings}{
+        \printtext{\bibstring{In}}
+    }{}
+}
+
+\renewcommand*{\bibpagespunct}{
+    \ifentrytype{article}{
+        \addcomma
+    }{
+        \addcomma
+    }
+}
+%\renewcommand*{\nameyeardelim}{\addspace}
+
+\renewbibmacro*{issue+date}{}% Remove date
+
+\renewbibmacro*{note+pages}{% Add date after pages
+    \printfield{note}%
+    %\setunit{\bibpagespunct}%
+    %\printfield{pages}%
+    \setunit{\addspace}% 
+    \usebibmacro{date}% 
+    \newunit
+}
+
+\renewbibmacro*{volume+number+eid}{%
+    \printfield{volume}%
+    %  \setunit*{\adddot}%
+    %  \setunit*{\addnbspace}%
+    \printfield{number}%
+    \setunit{\bibpagespunct}%
+    \printfield{pages}%
+    %\setunit{\addcomma\space}%
+    \printfield{eid}
+}
+
+\renewbibmacro*{publisher+location+date}{%
+    \setunit{}%
+    \addspace%
+    \mkbibparens{%
+        \printlist{publisher}%
+        \setunit*{\addcomma\space}%
+        \printlist{location}%
+        \setunit*{\addcomma\space}%
+        \printfield{year}%
+    }
+}
+
+% Move pages from after date to after booktitle
+\xpatchbibdriver{inproceedings}
+    {\usebibmacro{publisher+location+date}%
+        \newunit\newblock
+        \usebibmacro{chapter+pages}}
+    {\usebibmacro{chapter+pages}%
+        \newunit\newblock
+        \usebibmacro{publisher+location+date}}
+  {}{\PackageWarning{biblatex}{Failed to patch inproceedings driver}}
+
+  \xpatchbibdriver{incollection}
+    {\usebibmacro{publisher+location+date}%
+        \newunit\newblock
+        \usebibmacro{chapter+pages}}
+    {\usebibmacro{chapter+pages}%
+        \newunit\newblock
+        \usebibmacro{publisher+location+date}}
+  {}{\PackageWarning{biblatex}{Failed to patch inproceedings driver}}
+
+\DeclareFieldFormat[article]{number}{\mkbibparens{#1}}
+\DeclareFieldFormat[inproceedings]{title}{#1}
+
