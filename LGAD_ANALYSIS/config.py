@@ -61,9 +61,13 @@ class Subplots:
     CHARGE_COLLECTION_ONE_PAD = True
     TIMING_ONE_PAD = True
 
-class PlotsConfig:
+class PlotsConfig:  # config for heatmap plots + time difference t50 histograms
+    V_MAX_AMP=True
+    V_MAX_CHARGE=True
+    V_MAX_TIMING=True
     AMPLITUDE_V_MAX = 0
     CHARGE_COLLECTION_V_MAX = 0
+    TIMING_V_MAX = 0.1
     TIME_DIFF_T50_N_BINS = 50
     TIME_DIFF_T50_BIN_MIN = 97
     TIME_DIFF_T50_BIN_MAX = 101

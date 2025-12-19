@@ -34,7 +34,7 @@ def main():
     #plot_noise(Paths.DATAFILE)  
     #plot_amplitude_everything()                                 
     #plot_saved_results("Amplitude")                               
-    #plot_2d_amplitude(Paths.DATAFILE, Paths.POSITIONS)             
+    plot_2d_amplitude(Paths.DATAFILE, Paths.POSITIONS)             
     #plot_amplitude_along_y_axis(Paths.DATAFILE, Paths.POSITIONS)  
     ##################################
 
