@@ -109,6 +109,22 @@ The rest of thius class defines a method to find automaticaly the \texttt{BASE$\
 This class is used to define the different thresholds to cut off the noise and select the actual data. These values can be chosen by visualising them with the functions \texttt{plot$\_$amplitude()}, \texttt{plot$\_$amplitude$\_$against$\_$t$\_$peak()} and \texttt{plot$\_$time$\_$difference$\_$t50()}. 
 
 \subsection{\texttt{InterpadConfig}}
-This class defines the different parameters used for the analysis in the interpad region. The x interval on the 2D plot like the one given in Figure \ref{fig:2d_collected_charge} defining the interpad region is given by the parameters \texttt{INTERPAD$\_$MIN} and \texttt{INTERPAD$\_$MAX}. The stepsize used during the measurement must also be given here. The y position where it is considered as the middle of the opening has also to be given.
+This class defines the different parameters used for the analysis in the interpad region. The x interval on the 2D plot like the one given in Figure \ref{fig:2d_collected_charge} defining the interpad region is given by the parameters \texttt{INTERPAD$\_$MIN} and \texttt{INTERPAD$\_$MAX}. The stepsize used during the measurement must also be given here. The y position where it is considered as the middle of the opening has also to be given. The \texttt{INTERPAD$\_$FRACTION} defines at which fraction of the sigmoid fit in \texttt{get$\_$interpad$\_$distance()}. \texttt{INTERPAD$\_$TIMING$\_$SCALE} defines the limits of the y axis for the plots of \texttt{plot$\_$time$\_$resolution$\_$interpad$\_$region$\_$everything()} (or the ones from the saved results).
 
-% WORD IF 
+\subsubsection{\texttt{Subplots}}
+Boolean values if the subplots for the \texttt{\dots plot$\_$everything()} functions have to be saved in the pdf file. This has currently not been implemented for all such sublots but can easily be done.
+
+\subsubsection{\texttt{PlotsConfig}}
+Configures the max values for the 2D heatmaps scale or the time interval in which the \texttt{plot$\_$time$\_$difference$\_$t50()} has to focus.
+
+\subsubsection{\texttt{Colors}}
+Defines the list of colors used for the plots.
+
+\subsection{\texttt{amplitude.py}}
+This python file defines the functions used for the amplidue analysis. A brief description of each function is given in the following subsections.
+
+\subsubsection{\texttt{plot$\_$amplitude()}}
+Plots the plot
+
+
+% WORD IF HAVE DO MEASURE WITH VERTIVAL LGAD OR OTHER DEVICE
