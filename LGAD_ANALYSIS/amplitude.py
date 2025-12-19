@@ -129,7 +129,7 @@ def plot_amplitude_against_t_peak(datafile, time_variable = "t_90 (s)"):
             for j in range(n_triggers):
                 if math.isnan(amplitude_data[i,j,1]):
                     continue
-                if amplitude_data[i,j,1] > 0: # HARDCODED AMPLITUDE ??
+                if amplitude_data[i,j,1] > 0: 
                     continue
                 time_diff = t_50_data[i,j,2] - t_50_data[i,j,1]
                 if time_diff < Filters.TIME_DIFF_MIN * 1e-9 or time_diff > Filters.TIME_DIFF_MAX * 1e-9:
@@ -194,7 +194,7 @@ def plot_amplitude_of_one_pad(datafile, channel, pad_positions):
     fit_x_axis = numpy.linspace(min(bin_centers), max(bin_centers), 200, endpoint=True)
     fit_y_axis = gaussian(fit_x_axis, muf, stdf)
     if Subplots.AMPLITUDE_ONE_PAD:
-        plt.plot(fit_x_axis, fit_y_axis, color = "r", label=f"Fit (${{\mu}}$ = {round(muf,2)}, ${{\sigma}}$ = {round(stdf,2)})")
+        plt.plot(fit_x_axis, fit_y_axis, color = "r", label=f"Fit (${{\mu}}$ = {round(muf,3)}, ${{\sigma}}$ = {round(stdf,3)})")
         plt.xlabel(f"Amplitude (V)")
         plt.ylabel(f"Frequency")
         plt.legend(loc = "best")
@@ -423,9 +423,6 @@ def project_onto_y_one_channel_amplitude(datafile, positions, channel, sensor_st
     t_50_data = data['t_50 (s)']
     t_90_data = data["t_90 (s)"]
     time_over_90_data = data['Time over 90% (s)']
-    # all_amps = amplitude_data.values
-    # min_val = numpy.nanmin(all_amps)
-    # max_val = numpy.nanmax(all_amps)
 
     for i in sensor_strip_positions:
         for j in range(n_triggers):
@@ -441,7 +438,6 @@ def project_onto_y_one_channel_amplitude(datafile, positions, channel, sensor_st
 
             if y[i] not in amplitudes:
                 amplitudes[y[i]] = []
-            #norm_amplitude = (amplitude - min_val) / (max_val - min_val)
             amplitudes[y[i]].append(amplitude)
 
     result = {"x axis": [], "y axis": [], "y error": []}
