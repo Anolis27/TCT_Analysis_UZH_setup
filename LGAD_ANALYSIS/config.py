@@ -4,7 +4,7 @@ import os
 class Paths:
     DATA_ROOT = os.path.expanduser("C:/Users/mathi/Documents/UZH/LGAD_ANALYSIS/Data")
     PREFERRED_BASE_DIR = os.path.expanduser(
-        "C:/Users/mathi/Documents/UZH/LGAD_ANALYSIS/Data/W9_V2_TW1/100V"
+        "C:/Users/mathi/Documents/UZH/LGAD_ANALYSIS/Data/W5_V2_TW2/100V"
     )
     SAVE_DIR = "saved_results"
 
@@ -69,8 +69,8 @@ class PlotsConfig:  # config for heatmap plots + time difference t50 histograms
     CHARGE_COLLECTION_V_MAX = 0
     TIMING_V_MAX = 0.1
     TIME_DIFF_T50_N_BINS = 50
-    TIME_DIFF_T50_BIN_MIN = 97
-    TIME_DIFF_T50_BIN_MAX = 101
+    TIME_DIFF_T50_BIN_MIN = 97.5
+    TIME_DIFF_T50_BIN_MAX = 100
 
 class Colors:
     CB_CYCLE = [

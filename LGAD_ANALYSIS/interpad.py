@@ -338,7 +338,7 @@ def plot_time_resolution_interpad_region(datafile, positions, pdf):
     plt.title(f"Time Resolution vs y Position — {datafile[5:11]}, {datafile[12:16]}")
     plt.gca().invert_xaxis()
     plt.xlabel(r"y Position ($\mu$m)")
-    plt.ylabel("Time Resolution (ns)")
+    plt.ylabel("Jitter (ns)")
     plt.legend(loc="best", fontsize="small")
     plt.tight_layout()
     #plt.show()  
@@ -488,14 +488,14 @@ def plot_time_resolution_interpad_region_v2(datafile, positions, pdf):
     plt.clf()
     plt.plot(result["x axis"], result["y axis"], ".-",
             markersize=3, linewidth=1, color=Colors.CB_CYCLE[0],
-            label=f"Time Resolution")
+            label=f"Jitter")
     plt.errorbar(result["x axis"], result["y axis"],
                 yerr=result["y error"], ls="none",
                 ecolor="k", elinewidth=1, capsize=2)
-    plt.title(f"Time Resolution vs y Position — {datafile[5:11]}, {datafile[12:16]}")
+    plt.title(f"Jitter vs x Position — {datafile[5:11]}, {datafile[12:16]}")
     plt.gca().invert_xaxis()
     plt.xlabel(r"x Position ($\mu$m)")
-    plt.ylabel("Time Resolution (ns)")
+    plt.ylabel("Jitter (ns)")
     plt.legend(loc="best", fontsize="small")
     plt.tight_layout()
     #plt.show()  
@@ -538,7 +538,7 @@ def plot_time_resolution_interpad_region_everything(directory_in_str = "Data/"):
             plt.clf()
             plt.title(f"Time Resolution in Interpad Region vs bias Voltage, {filename}")
             plt.xlabel(r"x Position ($\mu$m)")
-            plt.ylabel("Time Resolution (ns)")
+            plt.ylabel("Jitter (ns)")
             plt.gca().invert_xaxis()
             plt.tight_layout()
             colors_index = 0

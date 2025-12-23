@@ -80,138 +80,6 @@ def compute_amplitude_and_charge(datafile, positions):
 
     return x, y, ampl, charge, active_ch1, active_ch2
 
-def plot_heatmap(x, y, z, pdf, unit, title, vmax=None):
-    plt.clf()
-    fig, ax = plt.subplots(figsize=(10, 10))
-
-    data_frame = pd.DataFrame({'x': x, 'y': y, 'z': z})
-    heatmap = data_frame.pivot_table(
-        index='x', columns='y', values='z', aggfunc='mean'
-    )
-
-    sns.heatmap(
-        heatmap,
-        annot=False,
-        cmap="plasma_r",
-        vmax=vmax,                 
-        square=True,
-        ax=ax,
-        yticklabels=5,
-        xticklabels=5,
-        cbar_kws={"shrink": 0.5}
-    )
-
-    plt.tick_params(axis='both', which='major', labelsize=17)
-    plt.title(title, fontsize=20)
-    plt.xlabel(r"x ($\mu$m)", fontsize=18)
-    plt.ylabel(r"y ($\mu$m)", fontsize=18)
-
-    cbar = ax.collections[0].colorbar
-    cbar.set_label(unit, fontsize=18)
-
-    plt.tight_layout()
-    pdf.savefig(fig)
-    plt.close()
-
-
-# ============================================================
-# 1) AMPLITUDE
-# ============================================================
-def plot_2d_amplitude(datafile, positions):
-
-    base_dir = os.path.dirname(datafile)
-    sensorname = get_sensorname_from_path(base_dir)
-
-    if PlotsConfig.V_MAX_AMP:
-        vmax = PlotsConfig.AMPLITUDE_V_MAX
-    else:
-        vmax = None
-
-    x, y, ampl, _, ch1, ch2 = compute_amplitude_and_charge(datafile, positions)
-    with PdfPages(f"2d_amps_{sensorname}.pdf") as pdf:
-        
-        plot_heatmap(x, y, ampl[ch1], pdf, "Amplitude [V]",
-                    f"{sensorname} Ch{ch1}", vmax=vmax)
-
-        plot_heatmap(x, y, ampl[ch2], pdf, "Amplitude [V]",
-                    f"{sensorname} Ch{ch2}", vmax=vmax)
-
-        plot_heatmap(x, y, ampl["sum"], pdf, "Amplitude [V]",
-                    f"{sensorname} Ch{ch1}&{ch2}", vmax=vmax)
-        pdf.close()
-
-def plot_2d_amplitude_charge_everything(dir_in_str = "Data/"):
-    pdf_name = "2d_amplitudes_charge_all_sensors.pdf"
-
-    if PlotsConfig.V_MAX_AMP:
-        vmax_ampl = PlotsConfig.AMPLITUDE_V_MAX
-    else:
-        vmax_ampl = None
-    if PlotsConfig.V_MAX_CHARGE:
-        vmax_ch = PlotsConfig.CHARGE_COLLECTION_V_MAX
-    else:
-        vmax_ch = None
-
-
-    with PdfPages(pdf_name) as pdf:
-        for sensor_folder in os.listdir(dir_in_str):
-            base_dir = os.path.join(dir_in_str, sensor_folder)
-            for voltage_folder in sorted(os.listdir(base_dir), key=lambda x: int(x.rstrip("V"))):
-                base_dir_voltage = os.path.join(base_dir, voltage_folder)
-                if not os.path.isdir(base_dir_voltage):
-                    continue
-                datafile = os.path.join(base_dir_voltage, "parsed_from_waveforms.sqlite")
-                positions = os.path.join(base_dir_voltage, "positions.pickle")
-
-                if not os.path.isfile(datafile) or not os.path.isfile(positions):
-                    continue
-
-
-                x, y, ampl, charge, ch1, ch2 = compute_amplitude_and_charge(datafile, positions)
-
-                plot_heatmap(x, y, ampl[ch1], pdf, "Amplitude [V]",
-                            f"{sensor_folder}, {voltage_folder} Ch{ch1}", vmax=vmax_ampl)
-
-                plot_heatmap(x, y, ampl[ch2], pdf, "Amplitude [V]",
-                            f"{sensor_folder}, {voltage_folder} Ch{ch2}", vmax=vmax_ampl)
-
-                plot_heatmap(x, y, ampl["sum"], pdf, "Amplitude [V]",
-                            f"{sensor_folder}, {voltage_folder} Ch{ch1}&{ch2}", vmax=vmax_ampl)
-                
-                plot_heatmap(x, y, charge[ch1], pdf, "Collected charge [V s]",
-                            f"{sensor_folder}, {voltage_folder} Ch{ch1}", vmax=vmax_ch)
-                plot_heatmap(x, y, charge[ch2], pdf, "Collected charge [V s]",
-                            f"{sensor_folder}, {voltage_folder} Ch{ch2}", vmax=vmax_ch)
-                plot_heatmap(x, y, charge["sum"], pdf, "Collected charge [V s]",
-                            f"{sensor_folder}, {voltage_folder} Ch{ch1}&{ch2}", vmax=vmax_ch)
-
-
-# ============================================================
-# 2) COLLECTED CHARGE
-# ============================================================
-def plot_2d_charge(datafile, positions):
-
-    base_dir = os.path.dirname(datafile)
-    sensorname = get_sensorname_from_path(base_dir)
-
-    if PlotsConfig.V_MAX_CHARGE:
-        vmax = PlotsConfig.CHARGE_COLLECTION_V_MAX
-    else:
-        vmax = None
-
-    x, y, _, charge, ch1, ch2 = compute_amplitude_and_charge(datafile, positions)
-
-    with PdfPages(f"2d_charge_{sensorname}.pdf") as pdf:
-        plot_heatmap(x, y, charge[ch1], pdf, "Collected charge [V s]",
-                     f"{sensorname} Ch{ch1}", vmax=vmax)
-
-        plot_heatmap(x, y, charge[ch2], pdf, "Collected charge [V s]",
-                     f"{sensorname} Ch{ch2}", vmax=vmax)
-
-        plot_heatmap(x, y, charge["sum"], pdf, "Collected charge [V s]",
-                     f"{sensorname} Ch{ch1}&{ch2}", vmax=vmax)
-        pdf.close()
-
 
 def compute_timing(datafile, positions):
     n_position, n_triggers, n_channels = query_dataset(datafile)
@@ -292,6 +160,140 @@ def compute_timing(datafile, positions):
 
     return x, y, times, ch1, ch2
 
+
+def plot_heatmap(x, y, z, pdf, unit, title, vmax=None):
+    plt.clf()
+    fig, ax = plt.subplots(figsize=(10, 10))
+
+    data_frame = pd.DataFrame({'x': x, 'y': y, 'z': z})
+    heatmap = data_frame.pivot_table(
+        index='x', columns='y', values='z', aggfunc='mean'
+    )
+
+    sns.heatmap(
+        heatmap,
+        annot=False,
+        cmap="plasma_r",
+        vmax=vmax,                 
+        square=True,
+        ax=ax,
+        yticklabels=5,
+        xticklabels=5,
+        cbar_kws={"shrink": 0.5}
+    )
+
+    plt.tick_params(axis='both', which='major', labelsize=17)
+    plt.title(title, fontsize=20)
+    plt.xlabel(r"x ($\mu$m)", fontsize=18)
+    plt.ylabel(r"y ($\mu$m)", fontsize=18)
+
+    cbar = ax.collections[0].colorbar
+    cbar.set_label(unit, fontsize=18)
+
+    plt.tight_layout()
+    pdf.savefig(fig)
+    plt.close()
+
+
+
+# ============================================================
+# 1) AMPLITUDE
+# ============================================================
+def plot_2d_amplitude(datafile, positions):
+
+    base_dir = os.path.dirname(datafile)
+    sensorname = get_sensorname_from_path(base_dir)
+
+    if PlotsConfig.V_MAX_AMP:
+        vmax = PlotsConfig.AMPLITUDE_V_MAX
+    else:
+        vmax = None
+
+    x, y, ampl, _, ch1, ch2 = compute_amplitude_and_charge(datafile, positions)
+    with PdfPages(f"2d_amps_{sensorname}.pdf") as pdf:
+        
+        plot_heatmap(x, y, ampl[ch1], pdf, "Amplitude [V]",
+                    f"{sensorname} Ch{ch1}", vmax=vmax)
+
+        plot_heatmap(x, y, ampl[ch2], pdf, "Amplitude [V]",
+                    f"{sensorname} Ch{ch2}", vmax=vmax)
+
+        plot_heatmap(x, y, ampl["sum"], pdf, "Amplitude [V]",
+                    f"{sensorname} Ch{ch1}&{ch2}", vmax=vmax)
+        pdf.close()
+
+# ============================================================
+# 2) COLLECTED CHARGE
+# ============================================================
+def plot_2d_charge(datafile, positions):
+
+    base_dir = os.path.dirname(datafile)
+    sensorname = get_sensorname_from_path(base_dir)
+
+    if PlotsConfig.V_MAX_CHARGE:
+        vmax = PlotsConfig.CHARGE_COLLECTION_V_MAX
+    else:
+        vmax = None
+
+    x, y, _, charge, ch1, ch2 = compute_amplitude_and_charge(datafile, positions)
+
+    with PdfPages(f"2d_charge_{sensorname}.pdf") as pdf:
+        plot_heatmap(x, y, charge[ch1], pdf, "Collected charge [V s]",
+                     f"{sensorname} Ch{ch1}", vmax=vmax)
+
+        plot_heatmap(x, y, charge[ch2], pdf, "Collected charge [V s]",
+                     f"{sensorname} Ch{ch2}", vmax=vmax)
+
+        plot_heatmap(x, y, charge["sum"], pdf, "Collected charge [V s]",
+                     f"{sensorname} Ch{ch1}&{ch2}", vmax=vmax)
+        pdf.close()
+
+def plot_2d_amplitude_charge_everything(dir_in_str = "Data/"):
+    pdf_name = "2d_amplitudes_charge_all_sensors.pdf"
+
+    if PlotsConfig.V_MAX_AMP:
+        vmax_ampl = PlotsConfig.AMPLITUDE_V_MAX
+    else:
+        vmax_ampl = None
+    if PlotsConfig.V_MAX_CHARGE:
+        vmax_ch = PlotsConfig.CHARGE_COLLECTION_V_MAX
+    else:
+        vmax_ch = None
+
+
+    with PdfPages(pdf_name) as pdf:
+        for sensor_folder in os.listdir(dir_in_str):
+            base_dir = os.path.join(dir_in_str, sensor_folder)
+            for voltage_folder in sorted(os.listdir(base_dir), key=lambda x: int(x.rstrip("V"))):
+                base_dir_voltage = os.path.join(base_dir, voltage_folder)
+                if not os.path.isdir(base_dir_voltage):
+                    continue
+                datafile = os.path.join(base_dir_voltage, "parsed_from_waveforms.sqlite")
+                positions = os.path.join(base_dir_voltage, "positions.pickle")
+
+                if not os.path.isfile(datafile) or not os.path.isfile(positions):
+                    continue
+
+
+                x, y, ampl, charge, ch1, ch2 = compute_amplitude_and_charge(datafile, positions)
+
+                plot_heatmap(x, y, ampl[ch1], pdf, "Amplitude [V]",
+                            f"{sensor_folder}, {voltage_folder} Ch{ch1}", vmax=vmax_ampl)
+
+                plot_heatmap(x, y, ampl[ch2], pdf, "Amplitude [V]",
+                            f"{sensor_folder}, {voltage_folder} Ch{ch2}", vmax=vmax_ampl)
+
+                plot_heatmap(x, y, ampl["sum"], pdf, "Amplitude [V]",
+                            f"{sensor_folder}, {voltage_folder} Ch{ch1}&{ch2}", vmax=vmax_ampl)
+                
+                plot_heatmap(x, y, charge[ch1], pdf, "Collected charge [V s]",
+                            f"{sensor_folder}, {voltage_folder} Ch{ch1}", vmax=vmax_ch)
+                plot_heatmap(x, y, charge[ch2], pdf, "Collected charge [V s]",
+                            f"{sensor_folder}, {voltage_folder} Ch{ch2}", vmax=vmax_ch)
+                plot_heatmap(x, y, charge["sum"], pdf, "Collected charge [V s]",
+                            f"{sensor_folder}, {voltage_folder} Ch{ch1}&{ch2}", vmax=vmax_ch)
+
+
 # ============================================================
 # 3) TIMING
 # ============================================================
@@ -308,14 +310,14 @@ def plot_2d_timing(datafile, positions):
     x, y, times, ch1, ch2 = compute_timing(datafile, positions)
     
     with PdfPages(f"2d_timing_{sensorname}.pdf") as pdf:
-        plot_heatmap(x, y, times[ch1], pdf, "Time [ns]",
-                    f"{sensorname} Ch{ch1}", max_v=vmax)
+        plot_heatmap(x, y, times[ch1], pdf, "Jitter [ns]",
+                    f"{sensorname} Ch{ch1}", vmax=vmax)
 
-        plot_heatmap(x, y, times[ch2], pdf, "Time [ns]",
-                    f"{sensorname} Ch{ch2}", max_v=vmax)
+        plot_heatmap(x, y, times[ch2], pdf, "Jitter [ns]",
+                    f"{sensorname} Ch{ch2}", vmax=vmax)
 
-        plot_heatmap(x, y, times["sum"], pdf, "Time resolution [ns]",
-                    f"{sensorname} Ch{ch1}&{ch2}", max_v=vmax)
+        plot_heatmap(x, y, times["sum"], pdf, "Jitter [ns]",
+                    f"{sensorname} Ch{ch1}&{ch2}", vmax=vmax)
         pdf.close()
 
 def plot_2d_timing_everything(dir_in_str = "Data/"):
@@ -341,11 +343,11 @@ def plot_2d_timing_everything(dir_in_str = "Data/"):
 
                 x, y, times, ch1, ch2 = compute_timing(datafile, positions)
 
-                plot_heatmap(x, y, times[ch1], pdf, "Time [ns]",
-                            f"{sensor_folder}, {voltage_folder} Ch{ch1}", max_v=vmax)
+                plot_heatmap(x, y, times[ch1], pdf, "Jitter [ns]",
+                            f"{sensor_folder}, {voltage_folder} Ch{ch1}", vmax=vmax)
 
-                plot_heatmap(x, y, times[ch2], pdf, "Time [ns]",
-                            f"{sensor_folder}, {voltage_folder} Ch{ch2}", max_v=vmax)
+                plot_heatmap(x, y, times[ch2], pdf, "Jitter [ns]",
+                            f"{sensor_folder}, {voltage_folder} Ch{ch2}", vmax=vmax)
 
-                plot_heatmap(x, y, times["sum"], pdf, "Time resolution [ns]",
-                            f"{sensor_folder}, {voltage_folder} Ch{ch1}&{ch2}", max_v=vmax)
+                plot_heatmap(x, y, times["sum"], pdf, "Jitter [ns]",
+                            f"{sensor_folder}, {voltage_folder} Ch{ch1}&{ch2}", vmax=vmax)

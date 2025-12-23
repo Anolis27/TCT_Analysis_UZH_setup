@@ -31,7 +31,7 @@ This section describes the development of a Python program for the data analysis
           [README$\_$CASSIA.txt]
         ]
         [LGAD$\_$ANALYSIS/
-          [Analysis$\_$2.tex]
+          [Analysis$\_$2.py]
           [amplitude.py]
           [charge$\_$collection.py]
           [config.py]
@@ -120,32 +120,142 @@ Configures the max values for the 2D heatmaps scale or the time interval in whic
 \subsubsection{\texttt{Colors}}
 Defines the list of colors used for the plots.
 
+\subsection{\texttt{plot$\_$2D$\_$maps.py}}
+This python file defines the functions used to plot the 2D heatmaps of amplitude, collected charge, time resolution for each or both channels. In case an analysis would be performed with one channel only, this code still works, but some lines could be commented to avoid plots of the other empty channels.
+
+\subsubsection{\texttt{get$\_$sensorname$\_$from$\_$path()}}
+Returns the sensor name from the path pointing to the processed folder for this sensor.
+
+\subsubsection{\texttt{compute$\_$amplitude$\_$and$\_$charge()}}
+Returns the x and y positions, a dictionary of the mean amplitude at each position in each channel and for the sum of both channels, a dictionary of the mean collected charge at each position in each channel and for the sum of both channels, and the detected active channels.
+
+\subsubsection{\texttt{compute$\_$timing()}}
+Computes the jitter at each position, and returns a dictionary of the jitter at each position for each channel and for both channels (by taking the minimum jitter between the two channels). The Jitter is determined as the standard deviation on the time difference between the two pulses of the same trigger at 50$\%$ of the pulses. The calculated jitter is also based on the data filtered between \texttt{TIME$\_$DIFF$\_$MIN} and \texttt{TIME$\_$DIFF$\_$MAX} defined in \texttt{config.py}. The x and y positions as well as the active channels are also returned.
+
+\subsubsection{\texttt{plot$\_$heatmap()}}
+Plots and saves the different 2D heatmaps in a pdf file. The maximum value of the z axis can be chosen from \texttt{config.py} through \texttt{AMPLITUDE$\_$V$\_$MAX}, \texttt{CHARGE$\_$COLLECTION$\_$V$\_$MAX} and \texttt{TIMING$\_$V$\_$MAX}. The booleans \texttt{V$\_$MAX$\_$AMPLITUDE}, \texttt{V$\_$MAX$\_$CHARGE} and \texttt{V$\_$MAX$\_$TIMING} enables this manual maximum scaling while being \enquote{\texttt{True}}, and scaled automatically  while \enquote{\texttt{False}}.
+
+\subsubsection{\texttt{plot$\_$2d$\_$amplitude()}}
+This function takes a measurement given by \texttt{BASE$\_$DIR} in \texttt{config.py} as argument and generates a pdf of the heatmaps of the mean amplitudes recorded in each channel and a heatmap of the sum of both channels. Figure \ref{fig:2d_amplitude_heatmap} gives an example of such heatmaps.
+
+\begin{figure}[h!]
+    \centering
+
+    % --- First row: two images side by side ---
+    \begin{subfigure}{0.43\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/chap2/2d_amp_ch3.png}
+        %\caption{First image}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.43\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/chap2/2d_amp_ch4.png}
+        %\caption{Second image}
+    \end{subfigure}
+
+    \vspace{0.5cm}
+
+    % --- Second row: one image centered ---
+    \begin{subfigure}{0.43\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/chap2/2d_amp_ch3ch4.png}
+        %\caption{Third image}
+    \end{subfigure}
+
+    \caption{Example of amplitude heatmaps for separate and both channels with \texttt{AMPLITUDE$\_$V$\_$MAX} = 0.}
+    \label{fig:2d_amplitude_heatmap}
+\end{figure}
+
+\subsubsection{\texttt{plot$\_$2d$\_$charge()}}
+This function takes a measurement given by \texttt{BASE$\_$DIR} in \texttt{config.py} as argument and generates a pdf of the heatmaps of the mean collected charge recorded in each channel and a heatmap of the sum of both channels. Figure \ref{fig:2d_charge_heatmap} gives an example of such heatmaps.
+
+\begin{figure}[h!]
+    \centering
+
+    % --- First row: two images side by side ---
+    \begin{subfigure}{0.43\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/chap2/2d_charge_ch3.png}
+        %\caption{First image}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.43\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/chap2/2d_charge_ch4.png}
+        %\caption{Second image}
+    \end{subfigure}
+
+    \vspace{0.5cm}
+
+    % --- Second row: one image centered ---
+    \begin{subfigure}{0.43\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/chap2/2d_charge_ch3ch4.png}
+        %\caption{Third image}
+    \end{subfigure}
+
+    \caption{Example of collected charge heatmaps for separate and both channels with \texttt{CHARGE$\_$COLLECTION$\_$V$\_$MAX} = 0.}
+    \label{fig:2d_charge_heatmap}
+\end{figure}
+
+\subsubsection{\texttt{plot$\_$2d$\_$amplitude$\_$charge$\_$everything()}}
+Generates a pdf file with the amplitude and collected charge heatmaps as in \texttt{plot$\_$2d$\_$amplitude()} and \texttt{plot$\_$2d$\_$charge()} for all the measurements (sensor and bias voltages) in the \texttt{Data/} folder.
+
+\subsubsection{\texttt{plot$\_$2d$\_$timing()}}
+This function takes a measurement given by \texttt{BASE$\_$DIR} in \texttt{config.py} as argument and generates a pdf of the heatmaps of the jitter in each channel and a heatmap for both channels computed by \texttt{compute$\_$timing()}. An example of such heatmaps are given in Figure \ref{fig:2d_timing_heatmap}. Missing data is visible on the heatmaps for single channels, this comes from the fact that no jitter could be calculated at these positions.
+
+\begin{figure}[h!]
+    \centering
+
+    % --- First row: two images side by side ---
+    \begin{subfigure}{0.43\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/chap2/2d_timing_ch3.png}
+        %\caption{First image}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.43\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/chap2/2d_timing_ch4.png}
+        %\caption{Second image}
+    \end{subfigure}
+
+    \vspace{0.5cm}
+
+    % --- Second row: one image centered ---
+    \begin{subfigure}{0.43\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/chap2/2d_timing_ch3ch4.png}
+        %\caption{Third image}
+    \end{subfigure}
+
+    \caption{Example of time resolution heatmaps for separate and both channels with \texttt{TIMING$\_$V$\_$MAX} = - 0.1 ns, \texttt{TIME$\_$DIFF$\_$MIN} = 98 ns and \texttt{TIME$\_$DIFF$\_$MAX} = 99.5 ns.}
+    \label{fig:2d_timing_heatmap}
+\end{figure}
 
 
-
-
-
-
-
-
+\subsubsection{\texttt{plot$\_$2d$\_$timing$\_$everything()}}
+Generates a pdf file with the jitter heatmaps as in \texttt{plot$\_$2d$\_$timing()} for all the measurements (sensor and bias voltages) in the \texttt{Data/} folder. 
 
 \subsection{\texttt{amplitude.py}}
-This python file defines the functions used for the amplidue analysis. A brief description of each function is given in the following subsections.
+This python file defines the functions used for the amplitude analysis. A brief description of each function is given in the following subsections.
 
 \subsubsection{\texttt{plot$\_$amplitude()}}
-Plots the histogram of the amplitudes recorded during the datataking, after filtering the noise on the time difference between the two pulses of the same trigger and the peaktime (see Sections \ref{} and \ref{sec:peak_t}). This enables to visualise the \texttt{AMPLITUDE$\_$THRESHOLD} to cut the noise and an example of the output plot is given in Figure \ref{fig:plot_amplitude}.
+\label{sec:plot_amplitude}
+Plots the histogram of the amplitudes recorded in each channel, after filtering the noise on the time difference between the two pulses of the same trigger and the peak time (see Sections \ref{} and \ref{sec:peak_t}). This enables to visualize the \texttt{AMPLITUDE$\_$THRESHOLD} to cut the noise and an example of the output plot is given in Figure \ref{fig:plot_amplitude}.
 
-\begin{figure}[h]
+\begin{figure}[h!]
   \centering
   \includegraphics[width=0.9\linewidth]{images/chap2/Amplitude_distribution.png}
-  \caption{Amplitude histogram of the data after filtering on the time difference and the peaktime.}
+  \caption{Amplitude histogram of the data after filtering on the time difference and the peak time.}
   \label{fig:plot_amplitude}
 \end{figure}
 
 \subsubsection{\texttt{plot$\_$noise()}}
 Plots the histogram of the noise recorded during the measurement. Figure \ref{fig:plot_noise} give an example of such a plot.
 
-\begin{figure}[h]
+\begin{figure}[h!]
   \centering
   \includegraphics[width=0.6\linewidth]{images/chap2/Noise_distribution.png}
   \caption{Noise histogram.}
@@ -156,7 +266,7 @@ Plots the histogram of the noise recorded during the measurement. Figure \ref{fi
 \label{sec:peak_t}
 Plots the amplitude against the peak time calculated by default with $ t_{peak} = t_{90} + 0.5 \cdot t_{over 90}$. The time variable (here $t_{90}$ and $t_{over 90}$) can be changed by gining it as argument to the function. This function can be used to define the \texttt{Filters} parameters based on the peak time. An example of such a plot is given in Figure \ref{fig:plot_peak_time}.
 
-\begin{figure}[h]
+\begin{figure}[h!]
   \centering
   \includegraphics[width=0.9\linewidth]{images/chap2/Amplitude_vs_peak_time.png}
   \caption{Amplitude against the peak time.}
@@ -164,9 +274,9 @@ Plots the amplitude against the peak time calculated by default with $ t_{peak} 
 \end{figure}
 
 \subsubsection{\texttt{plot$\_$amplitude$\_$of$\_$one$\_$pad()}}
-Plots a histogram of the amplitudes recorded in one channel, fits a gaussian curve and returns the mean amplitude and the standard deviation recorded in the channel. Figure \ref{fig:plot_ampl_1_pad} gives an exemple of such a plot (the values in the legend are rounded).
+Plots a histogram of the amplitudes recorded in one channel, fits a gaussian curve and returns the mean amplitude and the standard deviation recorded in the channel. Figure \ref{fig:plot_ampl_1_pad} gives an example of such a plot (the values in the legend are rounded).
 
-\begin{figure}[h]
+\begin{figure}[h!]
   \centering
   \includegraphics[width=0.6\linewidth]{images/chap2/Amplitude_one_pad.png}
   \caption{Amplitude histogram for one channel.}
@@ -176,7 +286,7 @@ Plots a histogram of the amplitudes recorded in one channel, fits a gaussian cur
 \subsubsection{\texttt{plot$\_$amplitude$\_$everything()}}
 Generates a pdf file with the plots of \texttt{plot$\_$amplitude$\_$of$\_$one$\_$pad()} for each channel, bias voltage and sensor located in \texttt{Data/} folder. The last plot saved in the pdf represents the mean amplitude against the bias voltage for each channel. Figure \ref{fig:plot_ampl_everything} is an example of this plot for TCT measurements on different Ti-LGAD samples. The results are of this plot are saved in \texttt{.pkl} files in the save directory, defined in the \texttt{config.py}, in order to save run time in case analysis has to be refined for one sensor. This is explained in Section \ref{sec:save_results}.
 
-\begin{figure}[h]
+\begin{figure}[h!]
   \centering
   \includegraphics[width=0.6\linewidth]{images/chap2/Amplitude_everything.png}
   \caption{Mean amplitude against bias voltage for each channel.}
@@ -186,7 +296,7 @@ Generates a pdf file with the plots of \texttt{plot$\_$amplitude$\_$of$\_$one$\_
 \subsubsection{\texttt{plot$\_$2D$\_$separate()}}
 This function outputs the plots on Figure \ref{fig:plot_2d_sep}. The right hand side of the Figure represents the 2D plot of the amplitude recorded in each channel and the left hand side represents a projection of this amplitude on the y axis. This is a not modified function of the original code and must be adapted to correct the plots on the left hand side. In fact, this projection is calculated with avrages on the whole data in each y position, taking the noise and the 0 amplitude data into account, resulting in a underestimation of the real amplitude abserved in each channel and un large standard deviation (resulting in large error bars).
 
-\begin{figure}[h]
+\begin{figure}[h!]
   \centering
   \includegraphics[width=0.5\linewidth]{images/chap2/plot_2d_separate.png}
   \caption{Output of \texttt{plot$\_$2D$\_$separate()}.}
@@ -194,18 +304,82 @@ This function outputs the plots on Figure \ref{fig:plot_2d_sep}. The right hand 
 \end{figure}
 
 \subsubsection{\texttt{project$\_$onto$\_$y$\_$one$\_$channel$\_$amplitude()}}
-Returns a dictionnary with the amplitude projection of in the interpad region defined in the \texttt{config.py}. This function was created to compute the interpad distance with the amplitude (see Section \ref{sec:interpad}). The fact that the name of the function refers to a projection along the y axis and actually project along the x axis on Figure \ref{fig:2d_collected_charge} is because there is an inversion between the axis compared to the actual measured data and can lead to some confusions.
+Returns a dictionary with the amplitude projection of in the interpad region defined in the \texttt{config.py}. This function was created to compute the interpad distance with the amplitude (see Section \ref{sec:interpad}). The fact that the name of the function refers to a projection along the y axis and actually project along the x axis on Figure \ref{fig:2d_amplitude_heatmap} is because there is an inversion between the axis compared to the actual data outputted by the measurement and can lead to some confusions.
 
 \subsubsection{\texttt{plot$\_$amplitude$\_$along$\_$y$\_$axis()}}
 
 This function plots the projection of the amplitude and the collected charge in each channel for one selected y value in the middle of the opening (defined in \texttt{config.py}) along the y axis of Figures \ref{fig:2d_ampl} and \ref{fig:2d_collected_charge}. Figure \ref{fig:plot_projection} represents an output of this function.
 
-\begin{figure}[h]
+\begin{figure}[h!]
   \centering
   \includegraphics[width=0.9\linewidth]{images/chap2/project_along_y.png}
   \caption{Projection of the normalised amplitude and the collected charge on x for a given y of the 2D plots on Figures \ref{fig:2d_ampl} adn \ref{fig:2d_collected_charge}.}
   \label{fig:plot_projection}
 \end{figure}
+
+\subsection{\texttt{charge$\_$collection.py}}
+This python file defines the functions related to the charge collection analysis of the measurement.
+
+\subsubsection{\texttt{plot$\_$collected$\_$charge()}}
+Plots the histogram of the collected charge recorded in each channel, after filtering the noise on the time difference between the two pulses of the same trigger, the peak time and the amplitude (see Sections \ref{}, \ref{sec:peak_t} and \ref{sec:plot_amplitude}). An example of the output of this function in given in Figure \ref{fig:plot_charge_distrib}.
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.9\linewidth]{images/chap2/Collected_charge_distribution.png}
+  \caption{Collected charge histogram after filtering the noise on the time difference between the two pulses of the same trigger, the peak time and the amplitude.}
+  \label{fig:plot_charge_distrib}
+\end{figure}
+
+\subsubsection{\texttt{plot$\_$collected$\_$charge$\_$of$\_$one$\_$pad()}}
+Plots a histogram of the collected change recorded in one channel, fits a gaussian curve and returns the mean collected charge and the standard deviation in the channel. Figure \ref{fig:plot_charge_1_pad} gives an example of such a plot (the values in the legend are rounded).
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.6\linewidth]{images/chap2/Charge_one_pad.png}
+  \caption{Collected charge histogram for one channel.}
+  \label{fig:plot_charge_1_pad}
+\end{figure}
+
+The gaussian fit can be discussed since the distribution on the histogram is not completely symmetric and correct. To describe obtain a physical fit, it should follow the convolution of the probability distribution to have M photons in the laser pulse, a poissonian distribution (probability density to absorb N photons and generate a electron-hole pair), the gain distribution of the LGAD (probability density to generate the charge Q from a electron-hole generation), the gain distribution of the amplifier and the the random electronic noise distribution. % REFERENCES AND PROOF?? 
+
+\subsubsection{\texttt{plot$\_$collected$\_$charge$\_$everything()}}
+Generates a pdf file with the plots of \texttt{plot$\_$collected$\_$charge$\_$of$\_$one$\_$pad()} for each channel, bias voltage and sensor located in \texttt{Data/} folder. The last plot saved in the pdf represents the mean collected charge against the bias voltage for each channel. Figure \ref{fig:plot_charge_everything} is an example of this plot for TCT measurements on different Ti-LGAD samples. The results are of this plot are saved in \texttt{.pkl} files in the save directory, defined in the \texttt{config.py}, in order to save run time in case analysis has to be refined for one sensor. This is explained in Section \ref{sec:save_results}.
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.6\linewidth]{images/chap2/charge_everything.png}
+  \caption{Mean collected charge against bias voltage for each channel.}
+  \label{fig:plot_charge_everything}
+\end{figure}
+
+\subsubsection{\texttt{project$\_$onto$\_$y$\_$one$\_$channel$\_$charge()}}
+Returns a dictionary with the collected charge projection in the interpad region defined in the \texttt{config.py}. This function was created to compute the interpad distance with the collected charge (see Section \ref{sec:interpad}). The fact that the name of the function refers to a projection along the y axis and actually project along the x axis on Figure \ref{fig:2d_charge_heatmap} is because there is an inversion between the axis compared to the actual data outputted by the measurement and can lead to some confusions.
+
+\subsection{\texttt{timing.py}}
+This python file defines the functions related to the timing analysis of the measurement.
+\subsubsection{\texttt{plot$\_$time$\_$difference$\_$t50()}}
+Plots the time differences between the two pulses of the same trigger at calculated at 50$\%$ of the pulses for each separate channel. The parameters of the plot are defined in the \texttt{PlotsConfig} class of \texttt{config.py}, such as the minimum and maximum of the abscise and the number of bins for the histogram.  Figure \ref{fig:plot_tdiff_50} represents such a plot and can be used to define \texttt{TIME$\_$DIFF$\_$MIN} and \texttt{TIME$\_$DIFF$\_$MAX} in \texttt{config.py} for the noise filtering. 
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.9\linewidth]{images/chap2/Time_diff_50_distribution.png}
+  \caption{Measured time difference histogram between the two pulses of the same trigger at 50$\%$ of the pulses for each separate channel.}
+  \label{fig:plot_tdiff_50}
+\end{figure}
+
+\subsubsection{\texttt{plot$\_$time$\_$resolution$\_$of$\_$one$\_$pad()}}
+Plots the histogram of the time differences between the two pulses of the same trigger at 50$\%$ of the pulses measured in one channel. A gaussian is fitted on this distribution to determine the jitter (standard deviation), proportional to the time resolution. Figure \ref{fig:plit_tdiff_one_pad}
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.9\linewidth]{images/chap2/time_diff_one_pad.png}
+  \caption{Measured time difference histogram in one channel.}
+  \label{fig:plot_tdiff_one_pad}
+\end{figure}
+
+\subsubsection{\texttt{plot$\_$time$\_$resolution$\_$everything()}}
+
+\subsubsection{\texttt{plot$\_$time$\_$difference$\_$histogram()}}
+
 
 \subsection{\texttt{interpad.py}}
 \label{sec:interpad}
@@ -213,5 +387,7 @@ This function plots the projection of the amplitude and the collected charge in 
 \subsection{\texttt{data$\_$manager.py}}
 \subsubsection{\texttt{save$\_$results()}}
 \label{sec:save_results}
+
+\subsection{\texttt{plot$\_$saved$\_$results.py}}
 
 % WORD IF HAVE DO MEASURE WITH VERTIVAL LGAD OR OTHER DEVICE

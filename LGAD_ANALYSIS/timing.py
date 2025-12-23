@@ -38,7 +38,7 @@ def plot_time_difference_t50(datafile):
         print(f"mu = {mu}, std = {std}")
         bin_min = PlotsConfig.TIME_DIFF_T50_BIN_MIN
         bin_max = PlotsConfig.TIME_DIFF_T50_BIN_MAX
-        custom_bins = numpy.linspace(bin_min, bin_max, 50 ,endpoint=True)
+        custom_bins = numpy.linspace(bin_min, bin_max, PlotsConfig.TIME_DIFF_T50_N_BINS ,endpoint=True)
         (n, bins, patches) = subplots[plot].hist(time_difference[channel], bins=custom_bins, density=True, stacked=False ,histtype='stepfilled', color=Colors.CB_CYCLE[plot], alpha = 0.5, lw=1, label=f"Data (${{\mu}}$ = {round(mu,2)}, ${{\sigma}}$ = {round(std,2)})")
 
         bin_centers = (bins[:-1] + bins[1:]) / 2
@@ -49,7 +49,7 @@ def plot_time_difference_t50(datafile):
         fit_y_axis = gaussian(fit_x_axis, muf, stdf)
 
         subplots[plot].set_xlim(bin_min, bin_max)
-        subplots[plot].plot(fit_x_axis, fit_y_axis, "r", label="Gaussian fit")
+        subplots[plot].plot(fit_x_axis, fit_y_axis, "r", label=f"Fit (${{\mu}}$ = {round(muf,3)}, ${{\sigma}}$ = {round(stdf,3)})")
 
         subplots[plot].axvline(
             x=Filters.TIME_DIFF_MIN,
@@ -69,9 +69,7 @@ def plot_time_difference_t50(datafile):
         subplots[plot].legend(loc="upper left")
 
         plot += 1
-
-
-    fig.suptitle(f'Time Difference (t_50)')
+    fig.suptitle(f'Time Difference (t_50) {datafile[48:57]}, {datafile[58:62]}')
     plt.show()
     return None
 

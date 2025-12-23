@@ -27,7 +27,7 @@ def main():
     ####### FILTER CONFIG ######                     
     #plot_amplitude_against_t_peak(Paths.DATAFILE, time_variable = "t_90 (s)") 
     #plot_amplitude(Paths.DATAFILE)
-    #plot_time_difference_t50(Paths.DATAFILE)
+    plot_time_difference_t50(Paths.DATAFILE)
     ############################
 
     ####### AMPLITUDE ANALYSIS #######
@@ -35,7 +35,7 @@ def main():
     #plot_amplitude_everything()                                 
     #plot_saved_results("Amplitude")                               
     #plot_2d_amplitude(Paths.DATAFILE, Paths.POSITIONS)             
-    plot_amplitude_along_y_axis(Paths.DATAFILE, Paths.POSITIONS)  
+    #plot_amplitude_along_y_axis(Paths.DATAFILE, Paths.POSITIONS)  
     ##################################
 
     ####### CHARGE COLLECTION ANALYSIS #######
