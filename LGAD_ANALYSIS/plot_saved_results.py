@@ -113,10 +113,10 @@ def plot_saved_results(analysis):
 
                 # Final formatting of the sensor plot
                 plt.title(f"Jitter in Interpad Region — {sensor}")
-                plt.xlabel("y Position (µm)")
+                plt.xlabel("x Position (µm)")
                 plt.ylabel("Jitter (ns)")
                 plt.ylim(bottom=InterpadConfig.INTERPAD_TIMING_SCALE[0], top=InterpadConfig.INTERPAD_TIMING_SCALE[1]) # ajust scale
-                plt.gca().invert_xaxis()
+                #plt.gca().invert_xaxis()
                 plt.legend(loc="best")
                 plt.tight_layout()
 

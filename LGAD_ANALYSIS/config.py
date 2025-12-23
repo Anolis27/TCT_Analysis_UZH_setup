@@ -4,7 +4,7 @@ import os
 class Paths:
     DATA_ROOT = os.path.expanduser("C:/Users/mathi/Documents/UZH/LGAD_ANALYSIS/Data")
     PREFERRED_BASE_DIR = os.path.expanduser(
-        "C:/Users/mathi/Documents/UZH/LGAD_ANALYSIS/Data/W5_V2_TW2/100V"
+        "C:/Users/mathi/Documents/UZH/LGAD_ANALYSIS/Data/W5_V2_TW5/100V"
     )
     SAVE_DIR = "saved_results"
 

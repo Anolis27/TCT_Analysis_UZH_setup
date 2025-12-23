@@ -167,7 +167,7 @@ def get_interpad_distance(datafile, positions, channel1, sensor_strip_positions1
     # Plot settings
     # ============================
     plt.title(f"{datafile}")# , {datafile[12:16]}")
-    plt.gca().invert_xaxis()
+    #plt.gca().invert_xaxis()
     plt.xlabel(r"x ($\mu$m)")
     plt.ylabel("Normalized Collected Charge")
     plt.legend(bbox_to_anchor=(1.0, 1), loc="upper left", fontsize="small")
@@ -336,7 +336,7 @@ def plot_time_resolution_interpad_region(datafile, positions, pdf):
                 yerr=result["y error"], ls="none",
                 ecolor="k", elinewidth=1, capsize=2)
     plt.title(f"Time Resolution vs y Position — {datafile[5:11]}, {datafile[12:16]}")
-    plt.gca().invert_xaxis()
+    #plt.gca().invert_xaxis()
     plt.xlabel(r"y Position ($\mu$m)")
     plt.ylabel("Jitter (ns)")
     plt.legend(loc="best", fontsize="small")
@@ -493,7 +493,7 @@ def plot_time_resolution_interpad_region_v2(datafile, positions, pdf):
                 yerr=result["y error"], ls="none",
                 ecolor="k", elinewidth=1, capsize=2)
     plt.title(f"Jitter vs x Position — {datafile[5:11]}, {datafile[12:16]}")
-    plt.gca().invert_xaxis()
+    #plt.gca().invert_xaxis()
     plt.xlabel(r"x Position ($\mu$m)")
     plt.ylabel("Jitter (ns)")
     plt.legend(loc="best", fontsize="small")
@@ -539,7 +539,7 @@ def plot_time_resolution_interpad_region_everything(directory_in_str = "Data/"):
             plt.title(f"Time Resolution in Interpad Region vs bias Voltage, {filename}")
             plt.xlabel(r"x Position ($\mu$m)")
             plt.ylabel("Jitter (ns)")
-            plt.gca().invert_xaxis()
+            #plt.gca().invert_xaxis()
             plt.tight_layout()
             colors_index = 0
             for key in final_plot[filename]:

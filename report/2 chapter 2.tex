@@ -1,11 +1,11 @@
-\chapter{Analysis program for TCT measurments}
+\chapter{Analysis program for TCT measurements}
 \label{chap2}
 
-This section describes the development of a Python program for the data analysis of the TCT setup at UZH, starting from an initial script written by ................. The current state of the project can be found on the \href{https://github.com/Anolis27/TCT_Analysis_UZH_setup}{following GitHub repository}. The program was developed and optimized to analyse TCT measurements on Ti-LGADs, but a version of the initial code has also been adapted to analyse TCT data on CASSIA sensors. Furthermore, some parts of the code can be reused for the analysis of TCT measurements on other types of sensors.
+This section describes the development of a Python program for the data analysis of the TCT setup at UZH, starting from an initial script written by ................. The current state of the project can be found on the \href{https://github.com/Anolis27/TCT_Analysis_UZH_setup}{following GitHub repository}. The program was developed and optimized to analyze TCT measurements on Ti-LGADs, but a version of the initial code has also been adapted by Leena Diehl to analyze TCT data on CASSIA sensors. Furthermore, some parts of the code can be reused for the analysis of TCT measurements on other types of sensors.
 
 \begin{figure}[h!]
   \centering
-  \resizebox{0.9\textwidth}{!}{%
+  \resizebox{0.8\textwidth}{!}{%
     \begin{forest}
       for tree={
         font=\ttfamily,
@@ -51,7 +51,7 @@ This section describes the development of a Python program for the data analysis
 
 \section{Structure of the GitHub repository}
 
-The structure of the GitHub repository is shown in the diagram bshown on Figure \ref{fig:repo_structure}. The repository contains two main folders: \texttt{CASSIA\_ANALYSIS} and \texttt{LGAD\_ANALYSIS}, which contain the analysis scripts for CASSIA sensors and Ti-LGADs, respectively. The main contribution to this project is the development of the \texttt{LGAD\_ANALYSIS} folder, which includes various Python scripts for different aspects of the TCT data analysis. 
+The structure of the GitHub repository is shown in the diagram shown on Figure \ref{fig:repo_structure}. The repository contains two main folders: \texttt{CASSIA\_ANALYSIS} and \texttt{LGAD\_ANALYSIS}, which contain the analysis scripts for CASSIA sensors and Ti-LGADs, respectively. The main contribution to this project is the development of the \texttt{LGAD\_ANALYSIS} folder, which includes various Python scripts for different aspects of the TCT data analysis. 
 
 
 \section{Description of the Ti-LGAD analysis program}
@@ -342,7 +342,9 @@ Plots a histogram of the collected change recorded in one channel, fits a gaussi
 The gaussian fit can be discussed since the distribution on the histogram is not completely symmetric and correct. To describe obtain a physical fit, it should follow the convolution of the probability distribution to have M photons in the laser pulse, a poissonian distribution (probability density to absorb N photons and generate a electron-hole pair), the gain distribution of the LGAD (probability density to generate the charge Q from a electron-hole generation), the gain distribution of the amplifier and the the random electronic noise distribution. % REFERENCES AND PROOF?? 
 
 \subsubsection{\texttt{plot$\_$collected$\_$charge$\_$everything()}}
-Generates a pdf file with the plots of \texttt{plot$\_$collected$\_$charge$\_$of$\_$one$\_$pad()} for each channel, bias voltage and sensor located in \texttt{Data/} folder. The last plot saved in the pdf represents the mean collected charge against the bias voltage for each channel. Figure \ref{fig:plot_charge_everything} is an example of this plot for TCT measurements on different Ti-LGAD samples. The results are of this plot are saved in \texttt{.pkl} files in the save directory, defined in the \texttt{config.py}, in order to save run time in case analysis has to be refined for one sensor. This is explained in Section \ref{sec:save_results}.
+Generates a pdf file with the plots of \texttt{plot$\_$collected$\_$charge$\_$of$\_$one$\_$pad()} for each channel, bias voltage and sensor located in \texttt{Data/} folder. The last plot saved in the pdf represents the mean collected charge against the bias voltage for each channel. Figure \ref{fig:plot_charge_everything} is an example of this plot for TCT measurements on different Ti-LGAD samples. 
+
+The results of this plot are saved in \texttt{.pkl} files in the save directory, defined in the \texttt{config.py}, in order to save run time in case analysis has to be refined for one sensor. This is explained in Section \ref{sec:save_results}.
 
 \begin{figure}[h!]
   \centering
@@ -367,22 +369,77 @@ Plots the time differences between the two pulses of the same trigger at calcula
 \end{figure}
 
 \subsubsection{\texttt{plot$\_$time$\_$resolution$\_$of$\_$one$\_$pad()}}
-Plots the histogram of the time differences between the two pulses of the same trigger at 50$\%$ of the pulses measured in one channel. A gaussian is fitted on this distribution to determine the jitter (standard deviation), proportional to the time resolution. Figure \ref{fig:plit_tdiff_one_pad}
+Plots the histogram of the time differences between the two pulses of the same trigger at 50$\%$ of the pulses measured in one channel. A gaussian is fitted on this distribution to determine the jitter (standard deviation), proportional to the time resolution. Figure \ref{fig:plot_tdiff_one_pad} is given as example of such a plot.
 
 \begin{figure}[h!]
   \centering
-  \includegraphics[width=0.9\linewidth]{images/chap2/time_diff_one_pad.png}
+  \includegraphics[width=0.6\linewidth]{images/chap2/time_diff_one_pad.png}
   \caption{Measured time difference histogram in one channel.}
   \label{fig:plot_tdiff_one_pad}
 \end{figure}
 
 \subsubsection{\texttt{plot$\_$time$\_$resolution$\_$everything()}}
+This function generates a pdf file with the plots given by \texttt{plot$\_$time$\_$resolution$\_$of$\_$one$\_$pad()} for each measurement in the \texttt{Data/} folder. This function also plots the jitter as a function of the bias voltage for each measured sample in each separate channels, as depicted in Figure \ref{fig:plot_tres_vs_BV}.  
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.65\linewidth]{images/chap2/jitter_vs_BV.png}
+  \caption{Jitter as a function of the bias voltage.}
+  \label{fig:plot_tres_vs_BV}
+\end{figure}
 
 \subsubsection{\texttt{plot$\_$time$\_$difference$\_$histogram()}}
-
+This function has not been significantly modified from the initial version of the code. It is not used elsewhere in the code and is currently not working, during an average and standard deviation calculation resulting in the error \enquote{\texttt{ValueError: array must not contain infs or NaNs}}. The goal of this function has been identified as the plot of a histogram of the time differences between the two pulses of the same trigger for a given y position of the plot of Figure \ref{fig:2d_timing_heatmap} for both channels, with the objective to fit a gaussian to extract the jitter.
 
 \subsection{\texttt{interpad.py}}
 \label{sec:interpad}
+This python file contains the definitions of the functions used for the analysis between the two pixels, and in particular, at the trench region.
+
+\subsubsection{\texttt{sigmoid()}}
+This function defines the sigmoid function used for fits in \texttt{get$\_$interpad$\_$distance()}. It is defined as:
+\begin{equation}
+  y(x) = \frac{L}{1 + e^{-k(x-x_0)}} + b
+\end{equation}
+with $L$ a scaling factor, positive for a rising sigmoid and negative for a decreasing sigmoid, $k$ the slope (steepness) of the transition, $x_0$ the position of the inflection point of the curve, and $b$ a vertical offset.
+
+\subsubsection{\texttt{get$\_$interpad$\_$distance()}}
+This function generates a plot similar than the one on Figure \ref{fig:IPD} and returns the Inter-Pad Distance (IPD) as well as its error. The plot represents the normalized collected charge in each channel projected on the axis perpendicular to the trench for a given measurement. A sigmoid function is fitted on the collected charge in each channel. The IPD is calculated as the distance at which the sigmoids reach 90$\%$ of its maximum between the two channels. This parameter is used to evaluate the range of the no-gain region between the pixels and to study the different trench designs. The green line represents the sum of the normalized collected charge in both channels.
+It is also possible to compute the IPD with amplitude projections by commenting and uncommenting some lines at the beginning of the function.
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.65\linewidth]{images/chap2/IPD.png}
+  \caption{Plot representing how the IPD is defined and calculated.}
+  \label{fig:IPD}
+\end{figure}
+
+\subsubsection{\texttt{plot$\_$interpad$\_$distance$\_$against$\_$bias$\_$voltage$\_$v2()}}
+This function generates a pdf file with all the output plots of \texttt{get$\_$interpad$\_$distance()} for each measurement in the \texttt{Data/} folder. Furthermore, it generates a plot representing the IPD as a function of the bias voltage for each sample (as chown on Figure \ref{fig:IPD_vs_BV}).
+The results of this plot are saved in \texttt{.pkl} files in the save directory, defined in the \texttt{config.py}, in order to save run time in case analysis has to be refined for one sensor. This is explained in Section \ref{sec:save_results}.
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.6\linewidth]{images/chap2/IPD_BV.png}
+  \caption{IPD ad a function of the bias voltage for different samples.}
+  \label{fig:IPD_vs_BV}
+\end{figure}
+
+\subsubsection{\texttt{plot$\_$time$\_$resolution$\_$interpad$\_$region()}}
+This function is not used anymore but was used to make a similar plot as Figure \ref{}. This difference with \texttt{plot$\_$time$\_$resolution$\_$interpad$\_$region$\_$v2()} reside in the selection of the data to compute the jitter. This function was computing the jitter with all the data that was passing trough the noise filter defined in the \texttt{config.py}. This lead to two drawbacks: the filter was to strict for some data at the trench resulting in missing results at low bias voltages, and the projection on the x axis on the plot of \newline \texttt{plot$\_$time$\_$resolution$\_$interpad$\_$region$\_$everything()} was not robust to a tilted sample (trench not completely perpendicular to the x axis).
+
+\subsubsection{\texttt{freedman$\_$diaconis$\_$bins()}}
+This function defines the Freedman-Diaconis rule to select the width of the bins of histograms. This function has been suggested by ChatGPT for the histograms in \newline \texttt{plot$\_$time$\_$resolution$\_$interpad$\_$region$\_$v2()}. % ADD REFERENCE
+
+\subsubsection{\texttt{plot$\_$time$\_$resolution$\_$interpad$\_$region$\_$v2()}}
+
+\subsubsection{\texttt{plot$\_$time$\_$resolution$\_$interpad$\_$region$\_$everything()}}
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.65\linewidth]{images/chap2/timing_IP.png}
+  \caption{Jitter in the inter-pad region as a function of the bias voltage.}
+  \label{fig:timing_IP}
+\end{figure}
 
 \subsection{\texttt{data$\_$manager.py}}
 \subsubsection{\texttt{save$\_$results()}}

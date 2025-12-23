@@ -27,7 +27,7 @@ def main():
     ####### FILTER CONFIG ######                     
     #plot_amplitude_against_t_peak(Paths.DATAFILE, time_variable = "t_90 (s)") 
     #plot_amplitude(Paths.DATAFILE)
-    plot_time_difference_t50(Paths.DATAFILE)
+    #plot_time_difference_t50(Paths.DATAFILE)
     ############################
 
     ####### AMPLITUDE ANALYSIS #######
@@ -58,7 +58,7 @@ def main():
     #plot_interpad_distance_against_bias_voltage_v2()            
     #plot_saved_results("Interpad_distance")                      
     #plot_time_resolution_interpad_region_everything()               
-    #plot_saved_results("Timing_interpad_region")                     
+    plot_saved_results("Timing_interpad_region")                     
     #################################
 
     ######## save data processing #######
