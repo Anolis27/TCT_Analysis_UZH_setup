@@ -21,7 +21,7 @@ def main():
     # print(f"Active channels: {active_channels}")                   
     #plot_pad_positions(Paths.DATAFILE, Paths.POSITIONS)           
     #plot_pad_position_everything()                           
-    #plot_sensor_strip_positions(Paths.DATAFILE, Paths.POSITIONS)
+    plot_sensor_strip_positions(Paths.DATAFILE, Paths.POSITIONS)
     #########################
 
     ####### FILTER CONFIG ######                     
@@ -58,7 +58,7 @@ def main():
     #plot_interpad_distance_against_bias_voltage_v2()            
     #plot_saved_results("Interpad_distance")                      
     #plot_time_resolution_interpad_region_everything()               
-    plot_saved_results("Timing_interpad_region")                     
+    #plot_saved_results("Timing_interpad_region")                     
     #################################
 
     ######## save data processing #######

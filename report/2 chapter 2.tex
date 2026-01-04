@@ -425,14 +425,44 @@ The results of this plot are saved in \texttt{.pkl} files in the save directory,
 \end{figure}
 
 \subsubsection{\texttt{plot$\_$time$\_$resolution$\_$interpad$\_$region()}}
-This function is not used anymore but was used to make a similar plot as Figure \ref{}. This difference with \texttt{plot$\_$time$\_$resolution$\_$interpad$\_$region$\_$v2()} reside in the selection of the data to compute the jitter. This function was computing the jitter with all the data that was passing trough the noise filter defined in the \texttt{config.py}. This lead to two drawbacks: the filter was to strict for some data at the trench resulting in missing results at low bias voltages, and the projection on the x axis on the plot of \newline \texttt{plot$\_$time$\_$resolution$\_$interpad$\_$region$\_$everything()} was not robust to a tilted sample (trench not completely perpendicular to the x axis).
+This function is not used anymore but was used to make a similar plot as Figure \ref{fig:jitter_simple_proj}. This difference with \texttt{plot$\_$time$\_$resolution$\_$interpad$\_$region$\_$v2()} reside in the selection of the data to compute the jitter. This function was computing the jitter with all the data that was passing trough the noise filter defined in the \texttt{config.py}. This lead to two drawbacks: the filter was to strict for some data at the trench resulting in missing results at low bias voltages, and the projection on the x axis on the plot of \newline \texttt{plot$\_$time$\_$resolution$\_$interpad$\_$region$\_$everything()} was not robust to a tilted sample (trench not completely perpendicular to the x axis). An example of the output with missing data at the trench is given on Figure \ref{fig:jitter_proj_old}.
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.45\linewidth]{images/chap2/jitter_IP_old.png}
+  \caption{Example of an output plot with missing data at the trench.}
+  \label{fig:jitter_proj_old}
+\end{figure}
 
 \subsubsection{\texttt{freedman$\_$diaconis$\_$bins()}}
 This function defines the Freedman-Diaconis rule to select the width of the bins of histograms. This function has been suggested by ChatGPT for the histograms in \newline \texttt{plot$\_$time$\_$resolution$\_$interpad$\_$region$\_$v2()}. % ADD REFERENCE
 
 \subsubsection{\texttt{plot$\_$time$\_$resolution$\_$interpad$\_$region$\_$v2()}}
+This function takes a measurement and a pdf file as argument. The jitter is calculated for each x coordinate and for each channel in the inter-pad region with the data at \texttt{Y$\_$POSITION$\_$MID$\_$PAD} $\pm$ \texttt{Y$\_$STEP}, defined in the \texttt{config.py}. This is performed in order to calculate the jitter on more statistics and can be modified with list \texttt{Y$\_$STEPS} within \texttt{plot$\_$time$\_$resolution$\_$interpad$\_$region$\_$v2()}. It results in a plot similar as the one in Figure \ref{fig:td_xy}. 
+Once the jitter is calculated along the whole inter-pad region, it plots the jitter as a function of the x distance, as shown on Figure \ref{fig:jitter_simple_proj}. The plotted jitter corresponds to the minimum jitter between the two channels.
+All the plots are saved in the pdf file.
+
+\begin{figure}[h!]
+    \centering
+    \begin{subfigure}[t]{0.45\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/chap2/td_timing_interpad.png}
+        \caption{Time difference histogram with the data at a given x coordinate in the inter-pad region and \texttt{Y$\_$POSITION$\_$MID$\_$PAD} $\pm$ \texttt{Y$\_$STEP}.}
+        \label{fig:td_xy}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.45\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{images/chap2/jitter_interpad_simple.png}
+        \caption{Jitter projection in the inter-pad region.}
+        \label{fig:jitter_simple_proj}
+    \end{subfigure}
+    \caption{Example of output plots of \texttt{plot$\_$time$\_$resolution$\_$interpad$\_$region$\_$v2()}.}
+    \label{fig:timing_IP_simple}
+\end{figure}
+
 
 \subsubsection{\texttt{plot$\_$time$\_$resolution$\_$interpad$\_$region$\_$everything()}}
+This function generates a pdf file with the same plots as in Figure \ref{fig:timing_IP_simple} for each measurement in the \texttt{Data/} folder and generates a plot similar to the one in Figure \ref{fig:timing_IP} for each sensor, providing information on the evolution of the jitter at the trench of the Ti-LGAD with the bias voltage. 
 
 \begin{figure}[h!]
   \centering
@@ -442,9 +472,145 @@ This function defines the Freedman-Diaconis rule to select the width of the bins
 \end{figure}
 
 \subsection{\texttt{data$\_$manager.py}}
+This Python file defines the functions used to process and select the data, acting as a toolbox.
+
+\subsubsection{\texttt{gaussian()}}
+Defines the gaussian function for gaussian fits as:
+\begin{equation}
+y(x) = \frac{1}{\sqrt{2\pi}\,\sigma}
+\exp\!\left( -\frac{(x-\mu)^2}{2\sigma^2} \right)
+\end{equation}
+
+\subsubsection{\texttt{querry$\_$dataset()}}
+Takes a \texttt{parsed$\_$from$\_$waveforms.sqlite} file of a measurement as argument and returns the number of (x,y) positions that were measured, the number of triggers at each position and the number of channels that were recorded with the oscilloscope. 
+
+\subsubsection{\texttt{get$\_$positions()}}
+Gets a \texttt{positions.pickle} file as argument, put the origin of the (x,y) frame at the center of the measurement and returns the (x,y) coordinates in $\mu$m for each position. These coordinates are the actual measured coordinates and were inverted in comparison to the 2D plots given in the other Sections.
+
+\subsubsection{\texttt{get$\_$bias$\_$voltage()}}
+Gets a \texttt{parsed$\_$from$\_$waveforms.sqlite} file as argument and returns the applied bias voltage with its uncertainty. This function originates from the original code and has not been tested.
+
+\subsubsection{\texttt{get$\_$channel$\_$amplitude()}}
+Gets a measurement (a \texttt{parsed$\_$from$\_$waveforms.sqlite} file) as argument and returns the amplitudes recorded at each position averaged on the different triggers. These amplitudes are filtered with the amplitude threshold, the time differences between the two pulses of the same trigger and the peak time. This function has not been implemented elsewhere in the code and originates from the initial code.
+
+\subsubsection{\texttt{determine$\_$active$\_$channels()}}
+Returns the tuples (1,2) or (3,4) depending on which channels are active based on the mean amplitudes recorded. This function must be modified in case other combinations of recorded channels are done (e.g. (1,4)) or if more than two channels must be analyzed.
+
+\subsubsection{\texttt{get$\_$pad$\_$positions()}}
+Returns the list of positions corresponding to valid signals in a given channel, i.e.\ the positions where the data pass the filters defined in \texttt{config.py}.
+
+\subsubsection{\texttt{plot$\_$pad$\_$positions()}}
+Plots the positions where valid signal has been detected by \texttt{get$\_$pad$\_$positions()} in each channels for a given measurement defined by the \texttt{BASE$\_$DIR} in \texttt{config.py}. Figure \ref{fig:pad_positions} is a representation of such a plot and the (x,y) coordinates correspond to the actual measured coordinates returned by \texttt{get$\_$positions()}. 
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.25\linewidth]{images/chap2/plot_pad_positions.png}
+  \caption{Example of output plot by \texttt{plot$\_$pad$\_$positions()}.}
+  \label{fig:pad_positions}
+\end{figure}
+
+\subsubsection{\texttt{plot$\_$pad$\_$position$\_$everything()}}
+This function generates a pdf file with plots of the positions of the filtered data is considered as signal for all the measurements in the \texttt{Data/} folder. It plots the pad positions for separate channels and for both of them, as shown on Figure \ref{fig:pad_positions_everything} for une measurement. The last page of the pdf contains the values of the parameters used for the filter in \texttt{config.py}. 
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=1\linewidth]{images/chap2/pad_positions_everything.png}
+  \caption{Example of an output plot by \texttt{plot$\_$pad$\_$positions$\_$everything()} for one measurement. Cross-talk can be observed between the channels in this example.}
+  \label{fig:pad_positions_everything}
+\end{figure}
+
+\subsubsection{\texttt{get$\_$sensor$\_$strip$\_$positions()}}
+Returns the positions used for the IPD calculations. First, it filters out the data and selects the region of interest (the inter-pas region). The (x,y) frame used in this function is the measured frame saved in the database. It then evaluates amplitude projections along x for bins located near the edges in the y-direction and selects the edge exhibiting the lowest mean amplitude (knowing the amplitudes are negative values). Based on the minimum of this projection and its associated uncertainty, the code identifies the corresponding valid x positions. These are finally combined with a selected range of y values to determine the indices defining the strip positions. 
+
+
+The \texttt{POINTS$\_$FROM$\_$EDGE$\_$STRIP$\_$POSITION} parameter defines the number of points in the \(y\)-direction not selected from the edge on the side where the signal is expected to be weak (e.g.\ on the positive side for the blue curve and the negative side for the orange curve in Fig.~\ref{fig:IPD}). This can be used when there is some cross-talk between pads in order to remove part of the data and obtain a more reliable sigmoid fit.
+
+This method to select the data to compute the IPD is still the original one and may have some limitations. Indeed, a mismatch between the selected data between the two channels for the x coordinate can lead to selected data as depicted on Figure \ref{fig:strip_positions}. This could lead to unexpected IPD results if the sensor is slightly tilted. It would be interesting to force the code to select matching data between the two channels.
+
+
+\subsubsection{\texttt{plot$\_$sensor$\_$strip$\_$positions()}}
+Plots the strip positions selected by \texttt{get$\_$sensor$\_$strip$\_$positions()}, as shown on Figure \ref{fig:strip_positions}.
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=1\linewidth]{images/chap2/plot_strip_position.png}
+  \caption{Example of an output plot by \texttt{plot$\_$sensor$\_$strip$\_$positions()} for one measurement. It can be observed that the selected data can mismatch between the two channels.}
+  \label{fig:strip_positions}
+\end{figure}
+
+\subsubsection{\texttt{detect$\_$type()}}
+Detects the type of an object (\texttt{data}) given as an argument. It returns:
+\begin{itemize}
+  \item a dictionary if the object contains results from the amplitude, charge collection, or timing analysis;
+  \item a tuple of length 3 if the object contains the results of the timing analysis in the inter-pad region;
+  \item a tuple of length 4 if the object contains the results of the IPD analysis in the inter-pad region.
+\end{itemize}
+This function has been written while writing \texttt{save$\_$results()} and its functionality is not completely used in the rest of the code.
+
 \subsubsection{\texttt{save$\_$results()}}
 \label{sec:save_results}
+This function takes the type of the analysis for which the results have to be saved and the actual data to same. It can save the final results of \texttt{plot$\_$amplitude$\_$everything()}, \texttt{plot$\_$collected$\_$charge$\_$everything()}, \texttt{plot$\_$time$\_$resolution$\_$everything()}, \\ \texttt{plot$\_$interpad$\_$distance$\_$against$\_$bias$\_$voltage$\_$v2()} and \\ \texttt{plot$\_$time$\_$resolution$\_$interpad$\_$region$\_$everything()} in pickle files. It was created in order to reload results without running the analysis for all sensors again (which is time consuming). The structure of the save directory is given in Figure \ref{fig:save_dir_struct}. 
+
+\begin{figure}[h!]
+  \centering
+  \resizebox{0.8\textwidth}{!}{%
+    \begin{forest}
+      for tree={
+        font=\ttfamily,
+        grow'=0,
+        child anchor=west,
+        parent anchor=south,
+        anchor=west,
+        calign=first,
+        edge path={
+          \noexpand\path [draw, \forestoption{edge}] (!u.parent anchor) |- (.child anchor)\forestoption{edge label};
+        },
+        before typesetting nodes={
+          if n=1
+            {insert before={[,phantom]}}
+            {}
+        },
+      }
+      [save$\_$results/
+        [Amplitude/
+          [W5$\_$V1$\_$TW5.pkl]
+          [\dots]
+        ]
+        [Collected$\_$charge/
+          [W5$\_$V1$\_$TW5.pkl]
+          [\dots]
+        ]
+        [Interpad$\_$distance/
+          [W5$\_$V1$\_$TW5.pkl]
+          [\dots]
+        ]
+        [Timing/
+          [W5$\_$V1$\_$TW5.pkl]
+          [\dots]
+        ]
+        [Timing$\_$interpad$\_$region/
+          [W5$\_$V1$\_$TW5/
+            [50V.pkl]
+            [\dots]
+          ]
+          [\dots]
+        ]
+      ]
+    \end{forest}
+  }
+  \caption{Structure of the save directory.}
+  \label{fig:save_dir_struct}
+\end{figure}
+
+\subsubsection{\texttt{load$\_$results()}}
+This function takes the path to a saved pickle file and returns the stored data along with its type.
+
+\subsubsection{\texttt{merge$\_$saved$\_$results()}}
+This function was intended to merge results from two saved pickle files but was left unfinished and does not work, as it was not required for the analysis performed.
 
 \subsection{\texttt{plot$\_$saved$\_$results.py}}
+This python file defines the functions that plot the data saved in pickle files.
+\subsubsection{\texttt{\texttt{plot$\_$saved$\_$results()}}}
+This function takes a string as an argument indicating which data should be loaded and plotted, depending on the selected type of analysis. It generates a pdf file containing the final plots of all results for the chosen analysis.
+
 
 % WORD IF HAVE DO MEASURE WITH VERTIVAL LGAD OR OTHER DEVICE

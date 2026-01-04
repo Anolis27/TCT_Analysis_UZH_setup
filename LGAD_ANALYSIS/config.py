@@ -4,7 +4,7 @@ import os
 class Paths:
     DATA_ROOT = os.path.expanduser("C:/Users/mathi/Documents/UZH/LGAD_ANALYSIS/Data")
     PREFERRED_BASE_DIR = os.path.expanduser(
-        "C:/Users/mathi/Documents/UZH/LGAD_ANALYSIS/Data/W5_V2_TW5/100V"
+        "C:/Users/mathi/Documents/UZH/LGAD_ANALYSIS/Data/W5_V2_TW5/60V"
     )
     SAVE_DIR = "saved_results"
 
@@ -50,7 +50,7 @@ class Filters:  # key values for Ti-LGAD
 class InterpadConfig:
     INTERPAD_REGION_MIN = - 75 # um
     INTERPAD_REGION_MAX = 75    # um
-    X_STEP = 5                 # um step size
+    Y_STEP = 5                 # um step size
     Y_POSITION_MID_PAD = 5     # um y position for plot_amplitude_along_y_axis and time_resolution_interpad_region
     INTERPAD_FRACTION = 0.9     # fraction of the sigmoid used for interpad distance calculation
     INTERPAD_TIMING_SCALE = (0.0, 0.1)  # y-axis limits for interpad timing plots (ns)

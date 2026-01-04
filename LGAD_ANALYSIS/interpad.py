@@ -371,14 +371,14 @@ def plot_time_resolution_interpad_region_v2(datafile, positions, pdf):
     time_over_90_data = data['Time over 90% (s)']
     y_pos = []
 
-    X_STEPS = [-InterpadConfig.X_STEP, 0, InterpadConfig.X_STEP]
+    Y_STEPS = [-InterpadConfig.Y_STEP, 0, InterpadConfig.Y_STEP]
 
     for channel in (chan1, chan2):
         time_differences[channel] = {}
 
         for i in range(n_position):
             if x[i] not in [
-                InterpadConfig.Y_POSITION_MID_PAD + dx for dx in X_STEPS
+                InterpadConfig.Y_POSITION_MID_PAD + dy for dy in Y_STEPS
             ]:
                 continue
 
@@ -458,7 +458,7 @@ def plot_time_resolution_interpad_region_v2(datafile, positions, pdf):
                 label=fr"Fit ($\mu$={mu_fit:.2f}, $\sigma$={std_fit:.2f})"
             )
             plt.title(
-                f"Time Difference Histogram at y = {y_position} µm — "
+                f"Time Difference Histogram at x = {y_position} µm — "
                 f"{datafile[5:14]}, {datafile[15:19]}, channel {chan}"
             )
             plt.xlabel("Time Difference (ns)")
@@ -492,7 +492,7 @@ def plot_time_resolution_interpad_region_v2(datafile, positions, pdf):
     plt.errorbar(result["x axis"], result["y axis"],
                 yerr=result["y error"], ls="none",
                 ecolor="k", elinewidth=1, capsize=2)
-    plt.title(f"Jitter vs x Position — {datafile[5:11]}, {datafile[12:16]}")
+    plt.title(f"Jitter vs x Position — {datafile[5:14]}, {datafile[15:19]}")
     #plt.gca().invert_xaxis()
     plt.xlabel(r"x Position ($\mu$m)")
     plt.ylabel("Jitter (ns)")

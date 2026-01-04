@@ -126,21 +126,9 @@ def determine_active_channels(datafile):
     return best_pair
 
 
-# Hardcoded to return channels 1 and 2 for now
-## def determine_active_channels(datafile):
-##    n_position, n_triggers, n_channels = query_dataset(datafile)
-##    result = {}; list_to_sort = []
-##    for channel in range(1, n_channels + 1):
-##        amplitudes = get_channel_amplitude(datafile, channel, pulse_no = 1, method = "median")
-##        result[round(sum(amplitudes),3)] = channel
-##        list_to_sort.append(round(sum(amplitudes),3))
-##        list_to_sort = sorted(list_to_sort)
-##    return tuple(sorted((result[list_to_sort[0]], result[list_to_sort[1]])))
-##    return (1,2)
-
 
 def get_pad_positions(datafile, positions, channel): 
-    # retrurns list of position indices that correspond to signal
+    # returns list of position indices that correspond to signal
     n_position, n_triggers, n_channels = query_dataset(datafile)
     (x,y) = get_positions(positions)
     connection = sqlite3.connect(datafile)
@@ -151,7 +139,7 @@ def get_pad_positions(datafile, positions, channel):
     t_90_data = data["t_90 (s)"]
     time_over_90_data = data['Time over 90% (s)']
     amplitudes = []
-    # filter out the meaningfull amplitudes
+    # filter out the meaningful amplitudes
     for i in range(n_position):
         result = []
         for j in range(n_triggers):
@@ -172,7 +160,7 @@ def get_pad_positions(datafile, positions, channel):
     # build dataframe with x, y, amplitudes
     data_frame = pandas.DataFrame({'x': x, 'y': y, 'z': amplitudes})
 
-    # select only intersting region
+    # select only interesting region
     # data_frame = data_frame[(data_frame["x"] >= -50) & (data_frame["x"] <= 50) & (data_frame["y"] >= -50) & (data_frame["y"] <= 50)]
 
     # build dataframe with x, y, amplitudes
@@ -209,7 +197,7 @@ def plot_pad_positions(datafile, positions):
 
     plt.xlabel(r"x ($\mu$m)")
     plt.ylabel(r"y ($\mu$m)")
-    plt.title(f'Pad Positions for {datafile[5:11]}, {datafile[12:16]}')
+    plt.title(f'Pad Positions for {datafile[48:57]}, {datafile[58:62]}')
     plt.legend(loc='best')
     plt.gca().set_aspect('equal', adjustable='box')
     plt.tight_layout()
@@ -353,7 +341,7 @@ def get_sensor_strip_positions(datafile, positions, channel):
 
     data_frame = pandas.DataFrame({'x': x, 'y': y, 'z': amplitudes})
 
-    # select only intersting region
+    # select only interesting region
     data_frame = data_frame[(data_frame["x"] >= InterpadConfig.INTERPAD_REGION_MIN) & (data_frame["x"] <= InterpadConfig.INTERPAD_REGION_MAX) & (data_frame["y"] >= InterpadConfig.INTERPAD_REGION_MIN) & (data_frame["y"] <= InterpadConfig.INTERPAD_REGION_MAX)]
 
     points_from_edge = InterpadConfig.POINTS_FROM_EDGE_STRIP_POSITION # this is hardcoded number
@@ -388,7 +376,7 @@ def get_sensor_strip_positions(datafile, positions, channel):
         if peak_min <= value_max <= peak_max or peak_min <= value_min <= peak_max or value_min <= peak_max <= value_max or value_min <= peak_min <= value_max:
             x_value = x_axis[value_index]
             valid_x.append(x_value[0])
-    pad_position = [] # list of n_positions that is the pad
+    strip_position = [] # list of n_positions that is the strip
     position_frame = pandas.DataFrame({'x': x, 'y': y})
 
     # valid_y = (pandas.Series(data_frame['y'].unique())).to_list()
@@ -396,12 +384,12 @@ def get_sensor_strip_positions(datafile, positions, channel):
     for x_value in valid_x:
         for y_value in valid_y:
             row_index = position_frame.query(f"x == {x_value} and y == {y_value}").index[0]
-            pad_position.append(row_index)
+            strip_position.append(row_index)
     # If you want to see which x and y is selected
     # print(f"Valid x: {valid_x}")
     # print(f"Valid y: {valid_y}")
-    # print(f"pad position strip: {pad_position}")
-    return pad_position
+    # print(f"position strip: {strip_position}")
+    return strip_position
 
 def plot_sensor_strip_positions(datafile, positions):
     # Load and prepare data
@@ -456,7 +444,7 @@ def plot_sensor_strip_positions(datafile, positions):
     for ax, title in zip(axes, titles):
         ax.set_title(title)
 
-    plt.suptitle(f"Sensor Strip Positions — {datafile[5:11]}, {datafile[12:16]}", fontsize=14)
+    plt.suptitle(f"Sensor Strip Positions — {datafile[48:57]}, {datafile[58:62]}", fontsize=14)
     plt.tight_layout(rect=[0, 0, 1, 0.96])
     plt.show()
 
