@@ -10,3 +10,7 @@ The measured data is saved in sqlite format and the (x,y) positions of the 2D sc
 
 
 ## CASSIA ANALYSIS
+
+# Report
+
+Find the draft of the report (main.pdf) with the description of the code in the report/ directory.
